@@ -11,7 +11,6 @@ import {
   Copy,
   Check,
   RotateCcw,
-  AlertCircle,
   ShieldAlert,
   HelpCircle,
   ExternalLink,
@@ -48,20 +47,83 @@ const LANGUAGES: { code: LanguageCode; label: string; native: string }[] = [
   { code: "hi", label: "Hindi", native: "हिन्दी" },
 ];
 
-const SUGGESTED_PROMPTS: { icon: any; text: string; category: string }[] = [
-  { icon: Wheat, text: "Which crop is suitable for my soil?", category: "crop" },
-  { icon: Droplets, text: "Should I irrigate today?", category: "irrigation" },
-  { icon: Sprout, text: "Which fertilizer is suitable for wheat?", category: "fertilizer" },
-  { icon: CloudSun, text: "What is the weather for my farm?", category: "weather" },
-  { icon: Coins, text: "What is the wheat market price?", category: "market" },
-  { icon: Bug, text: "Analyze my crop image", category: "disease" },
-  { icon: Landmark, text: "Which government schemes can I apply for?", category: "schemes" },
-  { icon: Milk, text: "Help me with my livestock", category: "livestock" },
-];
+const LOCALIZED_UI = {
+  en: {
+    title: "Agri-Verse AI",
+    subtitle: "Intelligent Farming Assistant",
+    greetingTitle: "Hello! I'm Agri-Verse AI.",
+    greetingDesc: "How can I help you with your crops, irrigation, fertilizers, weather, market prices, livestock, or government schemes today?",
+    suggestedLabel: "Suggested questions:",
+    placeholder: "Ask about crops, soil, water, prices...",
+    placeholderAttached: "Add details (optional) and hit send...",
+    thinking: "Agri-Verse AI is thinking...",
+    analyzingImage: "Analyzing crop image with AI vision...",
+    sendAria: "Send message",
+    openAria: "Open Agri-Verse AI Assistant",
+    uploadAria: "Upload crop image",
+    prompts: [
+      { icon: Wheat, text: "Which crop is suitable for my soil?" },
+      { icon: Droplets, text: "Should I irrigate today?" },
+      { icon: Sprout, text: "Which fertilizer is suitable for wheat?" },
+      { icon: CloudSun, text: "What is the weather for my farm?" },
+      { icon: Coins, text: "What is the wheat market price?" },
+      { icon: Bug, text: "Analyze my crop image" },
+      { icon: Landmark, text: "Which government schemes can I apply for?" },
+      { icon: Milk, text: "Help me with my livestock" },
+    ],
+  },
+  te: {
+    title: "అగ్రివర్స్ ఏఐ",
+    subtitle: "రైతు డిజిటల్ సహాయకుడు",
+    greetingTitle: "నమస్కారం! నేను అగ్రివర్స్ ఏఐ.",
+    greetingDesc: "పంటల ఎంపిక, ఎరువులు, నీటిపారుదల, వాతావరణం, మార్కెట్ ధరలు లేదా ప్రభుత్వ పథకాల గురించి నన్ను అడగండి.",
+    suggestedLabel: "ముఖ్యమైన ప్రశ్నలు:",
+    placeholder: "వ్యవసాయం గురించి అడగండి...",
+    placeholderAttached: "వివరాలు జతచేసి పంపండి...",
+    thinking: "అగ్రివర్స్ ఏఐ ఆలోచిస్తోంది...",
+    analyzingImage: "తెగులు చిత్రాన్ని విశ్లేషిస్తోంది...",
+    sendAria: "సందేశం పంపండి",
+    openAria: "అగ్రివర్స్ ఏఐ సహాయకుడిని తెరవండి",
+    uploadAria: "పంట చిత్రాన్ని అప్‌లోడ్ చేయండి",
+    prompts: [
+      { icon: Wheat, text: "నల్ల నేలలో ఏ పంట మంచిది?" },
+      { icon: Droplets, text: "ఈ రోజు నీరు పెట్టాలా?" },
+      { icon: Sprout, text: "గోధుమ పంటకు ఏ ఎరువు వేయాలి?" },
+      { icon: CloudSun, text: "నా ప్రాంత వాతావరణం ఎలా ఉంది?" },
+      { icon: Coins, text: "గోధుమ మార్కెట్ ధర ఎంత?" },
+      { icon: Bug, text: "పంట తెగులు చిత్రాన్ని విశ్లేషించండి" },
+      { icon: Landmark, text: "రైతు ప్రభుత్వ పథకాలు ఏమిటి?" },
+      { icon: Milk, text: "పాడి పశువుల సంరక్షణ సలహాలు" },
+    ],
+  },
+  hi: {
+    title: "एग्रीवर्स एआई",
+    subtitle: "स्मार्ट किसान सहायक",
+    greetingTitle: "नमस्ते! मैं एग्रीवर्स एआई हूँ।",
+    greetingDesc: "फसल चयन, खाद, सिंचाई, मौसम, मंडी भाव, पशुपालन या सरकारी योजनाओं के बारे में मुझसे पूछें।",
+    suggestedLabel: "सुझाए गए प्रश्न:",
+    placeholder: "खेती के बारे में पूछें...",
+    placeholderAttached: "विवरण जोड़ें और भेजें...",
+    thinking: "एग्रीवर्स एआई सोच रहा है...",
+    analyzingImage: "फसल रोग का विश्लेषण हो रहा है...",
+    sendAria: "संदेश भेजें",
+    openAria: "एग्रीवर्स एआई सहायक खोलें",
+    uploadAria: "फसल की फोटो अपलोड करें",
+    prompts: [
+      { icon: Wheat, text: "काली मिट्टी के लिए कौन सी फसल उपयुक्त है?" },
+      { icon: Droplets, text: "क्या आज मुझे सिंचाई करनी चाहिए?" },
+      { icon: Sprout, text: "गेहूं के लिए कौन सी खाद अच्छी है?" },
+      { icon: CloudSun, text: "मेरे खेत का मौसम कैसा रहेगा?" },
+      { icon: Coins, text: "गेहूं का आज का मंडी भाव क्या है?" },
+      { icon: Bug, text: "मेरी फसल की फोटो जांचें" },
+      { icon: Landmark, text: "मैं किन सरकारी योजनाओं के लिए आवेदन कर सकता हूँ?" },
+      { icon: Milk, text: "पशुपालन के लिए सहायता दें" },
+    ],
+  },
+};
 
-/** Simple markdown renderer for AI messages (supporting bold, lists, links) */
+/** Markdown text renderer for bold, bullets, numbered lists, and external links */
 function FormattedText({ content }: { content: string }) {
-  // Parse markdown bold **text**, bullet points, and links [label](url)
   const lines = content.split("\n");
 
   return (
@@ -70,7 +132,6 @@ function FormattedText({ content }: { content: string }) {
         const trimmed = line.trim();
         if (!trimmed) return <div key={idx} className="h-1" />;
 
-        // Bullet line
         const isBullet = trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*");
         const isNumbered = /^\d+\./.test(trimmed);
 
@@ -80,7 +141,6 @@ function FormattedText({ content }: { content: string }) {
           ? trimmed.replace(/^\d+\.\s*/, "")
           : trimmed;
 
-        // Render inline bold and links
         const formatted = renderInlineMarkdown(cleanLine);
 
         if (isBullet) {
@@ -110,7 +170,6 @@ function FormattedText({ content }: { content: string }) {
 }
 
 function renderInlineMarkdown(text: string): React.ReactNode[] {
-  // Regex to split on bold **text** and markdown links [title](url)
   const tokens = text.split(/(\*\*.*?\*\*|\[.*?\]\(.*?\))/g);
 
   return tokens.map((token, i) => {
@@ -147,7 +206,13 @@ export function FloatingAiAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>("en");
+  
+  // Persisted language selection
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageCode>(() => {
+    const saved = localStorage.getItem("agriverse_ai_lang");
+    return (saved === "te" || saved === "hi" || saved === "en") ? saved : "en";
+  });
+
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [conversationId, setConversationId] = useState<string>(() => `conv_${Date.now()}`);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -162,6 +227,15 @@ export function FloatingAiAssistant() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const location = useLocation();
+
+  const currentUi = LOCALIZED_UI[selectedLanguage] || LOCALIZED_UI.en;
+
+  // Persist language change
+  const handleLanguageChange = (lang: LanguageCode) => {
+    setSelectedLanguage(lang);
+    localStorage.setItem("agriverse_ai_lang", lang);
+    setLangDropdownOpen(false);
+  };
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -227,7 +301,7 @@ export function FloatingAiAssistant() {
       const errorMsg: ChatMessage = {
         id: `msg_${Date.now()}`,
         role: "assistant",
-        text: "AI service is temporarily unavailable. Please try again or check your internet connection.",
+        text: "AI is temporarily unavailable. Please try again.",
         disclaimer: "Agricultural AI suggestions should be verified with local agronomy experts.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
@@ -262,7 +336,7 @@ export function FloatingAiAssistant() {
       const errorMsg: ChatMessage = {
         id: `msg_${Date.now()}`,
         role: "assistant",
-        text: "Unable to analyze this image. Please ensure the photo is clear, well-lit, and in JPEG/PNG format.",
+        text: "Unable to analyze this image. Please try another image in JPEG, PNG, or WebP format.",
         disclaimer: "Agricultural AI suggestions should be verified with local agronomy experts.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
@@ -277,12 +351,11 @@ export function FloatingAiAssistant() {
     if (e) e.preventDefault();
     if (isBusy) return;
 
-    // If there is an attached image, trigger scan
     if (attachedFile) {
       const userMsg: ChatMessage = {
         id: `usr_${Date.now()}`,
         role: "user",
-        text: inputMessage.trim() || `[Uploaded ${scanType === "crop" ? "crop leaf" : "livestock"} image for disease diagnosis]`,
+        text: inputMessage.trim() || `[Uploaded ${scanType === "crop" ? "crop leaf" : "livestock"} image for diagnosis]`,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, userMsg]);
@@ -308,7 +381,11 @@ export function FloatingAiAssistant() {
 
   function handlePromptClick(promptText: string) {
     if (isBusy) return;
-    if (promptText === "Analyze my crop image") {
+    if (
+      promptText === "Analyze my crop image" ||
+      promptText === "పంట తెగులు చిత్రాన్ని విశ్లేషించండి" ||
+      promptText === "मेरी फसल की फोटो जांचें"
+    ) {
       fileInputRef.current?.click();
       return;
     }
@@ -343,7 +420,6 @@ export function FloatingAiAssistant() {
     const url = URL.createObjectURL(file);
     setImagePreviewUrl(url);
 
-    // Auto open assistant if closed
     if (!isOpen) {
       setIsOpen(true);
       setIsMinimized(false);
@@ -382,7 +458,7 @@ export function FloatingAiAssistant() {
         onChange={handleFileSelect}
         accept="image/jpeg,image/png,image/webp"
         className="hidden"
-        aria-label="Upload crop image"
+        aria-label={currentUi.uploadAria}
       />
 
       {/* ── 1. GLOBAL FLOATING TRIGGER BUTTON (BOTTOM RIGHT) ──────────────── */}
@@ -391,24 +467,23 @@ export function FloatingAiAssistant() {
           <div className="group relative flex items-center">
             {/* Tooltip on Hover */}
             <div className="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-lg bg-ink-900 px-3 py-1.5 text-xs font-medium text-white shadow-lg transition-opacity duration-200 group-hover:block">
-              Ask Agri-Verse AI
+              {currentUi.title}
               <div className="absolute -right-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-l-ink-900" />
             </div>
 
-            {/* Floating Pulse Button */}
+            {/* Floating Button */}
             <button
               onClick={() => {
                 setIsOpen(true);
                 setIsMinimized(false);
               }}
-              aria-label="Open Agri-Verse AI Assistant"
+              aria-label={currentUi.openAria}
               className="relative flex items-center gap-2 rounded-full bg-primary-600 px-4 py-3 text-white shadow-xl transition-all duration-300 hover:scale-105 hover:bg-primary-700 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-primary-400/40 active:scale-95"
             >
-              {/* Subtle Pulsing Ring */}
               <span className="absolute -inset-0.5 animate-ping rounded-full bg-primary-500 opacity-25" />
               <span className="text-xl leading-none">🌱</span>
               <span className="font-display text-sm font-semibold tracking-wide md:inline">
-                Ask AI
+                {selectedLanguage === "te" ? "ఏఐ సహాయం" : selectedLanguage === "hi" ? "पूछें AI" : "Ask AI"}
               </span>
               <Sparkles className="size-4 animate-pulse text-amber-300" />
             </button>
@@ -438,11 +513,11 @@ export function FloatingAiAssistant() {
               </div>
               <div className="min-w-0">
                 <h3 className="truncate font-display text-sm font-bold tracking-tight text-white">
-                  Agri-Verse AI
+                  {currentUi.title}
                 </h3>
                 {!isMinimized && (
                   <p className="text-[11px] text-primary-100">
-                    Intelligent Farming Assistant
+                    {currentUi.subtitle}
                   </p>
                 )}
               </div>
@@ -466,10 +541,7 @@ export function FloatingAiAssistant() {
                       {LANGUAGES.map((lang) => (
                         <button
                           key={lang.code}
-                          onClick={() => {
-                            setSelectedLanguage(lang.code);
-                            setLangDropdownOpen(false);
-                          }}
+                          onClick={() => handleLanguageChange(lang.code)}
                           className={cn(
                             "flex w-full items-center justify-between px-3 py-1.5 text-left text-xs transition-colors",
                             selectedLanguage === lang.code
@@ -520,7 +592,7 @@ export function FloatingAiAssistant() {
             </div>
           </div>
 
-          {/* Chat Body (hidden if minimized) */}
+          {/* Chat Body */}
           {!isMinimized && (
             <div className="flex flex-1 flex-col overflow-hidden bg-surface-alt">
               {/* Message List */}
@@ -535,21 +607,21 @@ export function FloatingAiAssistant() {
                       <span className="text-2xl">🌱</span>
                       <div>
                         <h4 className="font-display text-sm font-semibold text-ink-900">
-                          Hello! I'm Agri-Verse AI.
+                          {currentUi.greetingTitle}
                         </h4>
                         <p className="mt-0.5 text-xs text-ink-700">
-                          How can I help you with your crops, irrigation, fertilizers, weather, market prices, livestock, or government schemes today?
+                          {currentUi.greetingDesc}
                         </p>
                       </div>
                     </div>
 
-                    {/* 8 Clickable Suggested Prompts */}
+                    {/* Localized Clickable Suggested Prompts */}
                     <div>
                       <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-ink-500">
-                        Suggested questions:
+                        {currentUi.suggestedLabel}
                       </p>
                       <div className="grid grid-cols-1 gap-1.5">
-                        {SUGGESTED_PROMPTS.map((prompt, i) => {
+                        {currentUi.prompts.map((prompt, i) => {
                           const Icon = prompt.icon;
                           return (
                             <button
@@ -578,7 +650,7 @@ export function FloatingAiAssistant() {
                   >
                     {/* Role Header / Timestamp */}
                     <div className="flex items-center gap-1.5 px-1 text-[10px] text-ink-400">
-                      <span>{msg.role === "user" ? "You" : "Agri-Verse AI"}</span>
+                      <span>{msg.role === "user" ? "You" : currentUi.title}</span>
                       <span>•</span>
                       <span>{msg.timestamp}</span>
                     </div>
@@ -668,9 +740,7 @@ export function FloatingAiAssistant() {
                       <span className="size-2 animate-bounce rounded-full bg-primary-600 [animation-delay:-0.15s]" />
                       <span className="size-2 animate-bounce rounded-full bg-primary-600" />
                       <span className="ml-1 text-xs text-ink-600">
-                        {scanMutation.isPending
-                          ? "Analyzing crop image with AI vision..."
-                          : "Agri-Verse AI is thinking..."}
+                        {scanMutation.isPending ? currentUi.analyzingImage : currentUi.thinking}
                       </span>
                     </div>
                   </div>
@@ -730,18 +800,16 @@ export function FloatingAiAssistant() {
               {/* Chat Input Bar */}
               <div className="border-t border-border bg-surface p-3">
                 <form onSubmit={handleSend} className="flex items-end gap-2">
-                  {/* Image Upload Trigger */}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     title="Upload crop/livestock photo"
-                    aria-label="Upload crop image"
+                    aria-label={currentUi.uploadAria}
                     className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-border text-ink-600 transition-colors hover:border-primary-400 hover:bg-primary-50 hover:text-primary-700"
                   >
                     <Upload className="size-4" />
                   </button>
 
-                  {/* Text Input */}
                   <div className="relative flex-1">
                     <textarea
                       ref={inputRef}
@@ -753,15 +821,7 @@ export function FloatingAiAssistant() {
                           handleSend();
                         }
                       }}
-                      placeholder={
-                        attachedFile
-                          ? "Add details (optional) and hit send..."
-                          : selectedLanguage === "te"
-                          ? "వ్యవసాయం గురించి అడగండి..."
-                          : selectedLanguage === "hi"
-                          ? "खेती के बारे में पूछें..."
-                          : "Ask about crops, soil, water, prices..."
-                      }
+                      placeholder={attachedFile ? currentUi.placeholderAttached : currentUi.placeholder}
                       rows={1}
                       maxLength={4000}
                       disabled={isBusy}
@@ -769,11 +829,10 @@ export function FloatingAiAssistant() {
                     />
                   </div>
 
-                  {/* Send Button */}
                   <button
                     type="submit"
                     disabled={isBusy || (!inputMessage.trim() && !attachedFile)}
-                    aria-label="Send message"
+                    aria-label={currentUi.sendAria}
                     className={cn(
                       "flex size-9 shrink-0 items-center justify-center rounded-xl text-white shadow-xs transition-all",
                       isBusy || (!inputMessage.trim() && !attachedFile)
@@ -785,11 +844,10 @@ export function FloatingAiAssistant() {
                   </button>
                 </form>
 
-                {/* Footer status / quick disclaimer */}
                 <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-ink-400">
                   <span className="flex items-center gap-1">
                     <span className="size-1.5 rounded-full bg-emerald-500" />
-                    Agri-Verse AI v2.0
+                    Agri-Verse Agent
                   </span>
                   <span>Shift + Enter for new line</span>
                 </div>
