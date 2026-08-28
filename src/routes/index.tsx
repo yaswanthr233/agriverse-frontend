@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { FloatingAiAssistant } from "@/components/ai/FloatingAiAssistant";
 import { RequireAuth, RequireRole } from "./guards";
 import { PagePlaceholder as P } from "@/components/PagePlaceholder";
 import { Landing } from "@/features/landing/Landing";
@@ -198,6 +199,7 @@ export function AppRoutes() {
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
+      <FloatingAiAssistant />
     </BrowserRouter>
   );
 }

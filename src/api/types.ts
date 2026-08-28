@@ -401,8 +401,14 @@ export interface AppointmentResponse {
 
 export interface AiChatResponse {
   reply: string;
+  message?: string;
   source: string;
   disclaimer: string;
+  language?: string;
+  category?: string;
+  conversationId?: string;
+  suggestedFollowUps?: string[];
+  toolsUsed?: string[];
 }
 
 export interface AiDiseaseScanResponse {
@@ -411,13 +417,20 @@ export interface AiDiseaseScanResponse {
   confidence: number;
   severity: string;
   affected: string;
+  possibleCauses?: string;
   treatment: string[];
   prevention: string;
+  whenToConsultExpert?: string;
   source: string;
   disclaimer: string;
+  nextStep?: string;
 }
 
 export interface AiCropRecommendResponse {
+  season?: string;
+  soil?: string;
+  irrigation?: string;
+  areaAcres?: number;
   recommendations: {
     crop: string;
     score: number;
@@ -427,8 +440,18 @@ export interface AiCropRecommendResponse {
     icon: string;
     reason: string;
   }[];
-  source: string;
+  source?: string;
   disclaimer: string;
+}
+
+export interface AiHealthResponse {
+  ai: 'configured' | 'not_configured';
+  providers: {
+    gemini: boolean;
+    openWeather: boolean;
+    database: boolean;
+    multilingual: boolean;
+  };
 }
 
 /* ── Admin Management Types ───────────────────────────── */
