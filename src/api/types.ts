@@ -581,6 +581,16 @@ export interface DeliveryEarningsResponse {
   }[];
 }
 
+export interface UploadResponse {
+  url: string;
+  path: string;
+  filename: string;
+  size: number;
+  mimetype: string;
+  provider: "supabase" | "local";
+}
+
+
 
 
 

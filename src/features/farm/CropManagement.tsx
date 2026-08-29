@@ -101,8 +101,10 @@ export function CropManagement() {
       cropName: crop.cropName,
       variety: crop.variety ?? "",
       fieldAreaAcres: crop.fieldAreaAcres ?? undefined,
-      sowingDate: crop.sowingDate ?? "",
-      expectedHarvestDate: crop.expectedHarvestDate ?? "",
+      sowingDate: crop.sowingDate ? crop.sowingDate.split("T")[0] : "",
+      expectedHarvestDate: crop.expectedHarvestDate
+        ? crop.expectedHarvestDate.split("T")[0]
+        : "",
       status: crop.status ?? "PLANNED",
       expectedYieldKg: crop.expectedYieldKg ?? undefined,
       notes: crop.notes ?? "",
@@ -122,23 +124,23 @@ export function CropManagement() {
         : cropsApi.create(payload);
     },
     onSuccess: () => {
-      toast.success(editingCrop ? "Crop updated" : "Crop added");
+      toast.success(editingCrop ? "Crop updated successfully." : "Crop added successfully.");
       setModalOpen(false);
       void queryClient.invalidateQueries({ queryKey: qk.myCrops() });
       void queryClient.invalidateQueries({ queryKey: qk.farmerAnalytics() });
     },
-    onError: () => toast.error("Couldn't save crop."),
+    onError: () => toast.error("Couldn't save crop. Please try again."),
   });
 
   const deleteMutation = useMutation({
     mutationFn: cropsApi.remove,
     onSuccess: () => {
-      toast.success("Crop deleted");
+      toast.success("Crop deleted successfully.");
       setDeletingId(null);
       void queryClient.invalidateQueries({ queryKey: qk.myCrops() });
       void queryClient.invalidateQueries({ queryKey: qk.farmerAnalytics() });
     },
-    onError: () => toast.error("Couldn't delete crop."),
+    onError: () => toast.error("Couldn't delete crop. Please try again."),
   });
 
   return (

@@ -1,11 +1,10 @@
 import { useEffect } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { ImageOff } from "lucide-react";
 import { productsApi } from "@/api/endpoints/products";
 import { qk } from "@/api/queryKeys";
 import { PRODUCT_CATEGORIES } from "@/lib/categories";
@@ -17,8 +16,8 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ImageUploader } from "@/components/ui/ImageUploader";
 
-// Mirrors the backend's Bean Validation on ProductRequest.
 const schema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().optional(),
@@ -74,6 +73,7 @@ export function ProductForm() {
       stock: 0,
       unit: "piece",
       isActive: true,
+      imageUrl: "",
     },
   });
 
@@ -128,8 +128,6 @@ export function ProductForm() {
     },
   });
 
-  const imageUrl = useWatch({ control, name: "imageUrl" });
-
   if (isEdit && isLoading) return <Skeleton className="h-96 w-full" />;
 
   return (
@@ -141,7 +139,7 @@ export function ProductForm() {
       <Card className="mt-6 p-6">
         <form
           onSubmit={handleSubmit((v) => save.mutate(v))}
-          className="space-y-4"
+          className="space-y-5"
           noValidate
         >
           <Input
@@ -189,30 +187,23 @@ export function ProductForm() {
 
           <Input label="Brand (optional)" {...register("brand")} />
 
-          {/* The backend stores a URL string — there is no product image upload endpoint. */}
-          <Input
-            label="Image URL"
-            placeholder="https://…"
-            hint="Paste a link to a product photo"
-            error={errors.imageUrl?.message}
-            {...register("imageUrl")}
+          {/* Reusable Image Uploader Component (Upload Image OR Image URL) */}
+          <Controller
+            name="imageUrl"
+            control={control}
+            render={({ field }) => (
+              <ImageUploader
+                label="Product Image"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.imageUrl?.message}
+                folder="products"
+                hint="Upload a product photo or provide an image link (JPG, PNG, WebP up to 5 MB)"
+              />
+            )}
           />
 
-          {imageUrl && (
-            <div className="flex size-32 items-center justify-center overflow-hidden rounded-md border border-border bg-surface-sunk">
-              <img
-                src={imageUrl}
-                alt="Preview"
-                className="size-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none";
-                }}
-              />
-              <ImageOff className="size-6 text-ink-400" aria-hidden="true" />
-            </div>
-          )}
-
-          <label className="flex items-center gap-2 text-sm text-ink-700">
+          <label className="flex items-center gap-2 text-sm text-ink-700 pt-2">
             <input
               type="checkbox"
               className="size-4 rounded border-border"
@@ -221,7 +212,7 @@ export function ProductForm() {
             Listing is active and visible to buyers
           </label>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 pt-2">
             <Button type="submit" size="lg" loading={save.isPending}>
               {isEdit ? "Save changes" : "Create product"}
             </Button>

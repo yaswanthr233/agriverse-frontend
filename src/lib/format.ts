@@ -35,6 +35,8 @@ export function formatRelative(value: string | null | undefined): string {
   return dayjs(value).fromNow();
 }
 
+export const formatRelativeTime = formatRelative;
+
 /** "OUT_FOR_DELIVERY" -> "Out For Delivery". Prefer the backend's categoryLabel when present. */
 export function formatEnum(value: string | null | undefined): string {
   if (!value) return "—";

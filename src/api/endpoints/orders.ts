@@ -13,11 +13,8 @@ export const ordersApi = {
   seller: () =>
     api.get<OrderResponse[]>("/api/orders/seller").then((r) => r.data),
 
-  // status is a QUERY param, not a body field.
   updateStatus: (id: number, status: OrderStatus) =>
     api
-      .patch<OrderResponse>(`/api/orders/${id}/status`, null, {
-        params: { status },
-      })
+      .put<OrderResponse>(`/api/orders/${id}/status`, { status })
       .then((r) => r.data),
 };

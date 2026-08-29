@@ -128,24 +128,24 @@ export function Expenses() {
       return expensesApi.create(payload);
     },
     onSuccess: () => {
-      toast.success("Expense logged");
+      toast.success("Expense logged successfully.");
       setModalOpen(false);
       reset();
-      void queryClient.invalidateQueries({ queryKey: ["expenses", "my"] });
+      void queryClient.invalidateQueries({ queryKey: ["expenses"] });
       void queryClient.invalidateQueries({ queryKey: qk.farmerAnalytics() });
     },
-    onError: () => toast.error("Couldn't log expense."),
+    onError: () => toast.error("Couldn't log expense. Please try again."),
   });
 
   const deleteMutation = useMutation({
     mutationFn: expensesApi.remove,
     onSuccess: () => {
-      toast.success("Expense deleted");
+      toast.success("Expense deleted successfully.");
       setDeletingId(null);
-      void queryClient.invalidateQueries({ queryKey: ["expenses", "my"] });
+      void queryClient.invalidateQueries({ queryKey: ["expenses"] });
       void queryClient.invalidateQueries({ queryKey: qk.farmerAnalytics() });
     },
-    onError: () => toast.error("Couldn't delete expense."),
+    onError: () => toast.error("Couldn't delete expense. Please try again."),
   });
 
   const totalAmount = expenses?.reduce((sum, e) => sum + e.amount, 0) ?? 0;

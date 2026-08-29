@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ImageOff, ShoppingCart } from "lucide-react";
 import type { ProductResponse } from "@/api/types";
@@ -11,20 +12,21 @@ interface ProductCardProps {
   onAddToCart?: (product: ProductResponse) => void;
 }
 
-// NOTE: no rating, no stars, no wishlist — the backend has none of these.
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
+  const [imageError, setImageError] = useState(false);
   const outOfStock = product.stock <= 0;
 
   return (
     <Card interactive className="flex flex-col overflow-hidden">
       <Link to={`/product/${product.id}`} className="block">
         <div className="flex aspect-[4/3] items-center justify-center bg-surface-sunk">
-          {product.imageUrl ? (
+          {product.imageUrl && !imageError ? (
             <img
               src={product.imageUrl}
               alt={product.name}
               className="size-full object-cover"
               loading="lazy"
+              onError={() => setImageError(true)}
             />
           ) : (
             <ImageOff className="size-10 text-ink-400" aria-hidden="true" />

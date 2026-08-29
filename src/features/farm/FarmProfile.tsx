@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ImageUploader } from "@/components/ui/ImageUploader";
 
 const schema = z.object({
   farmName: z.string().min(1, "Farm name is required"),
@@ -43,9 +44,20 @@ export function FarmProfile() {
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(schema),
+    defaultValues: {
+      farmName: "",
+      village: "",
+      district: "",
+      state: "",
+      primaryActivity: "",
+      soilType: "",
+      hasIrrigation: false,
+      imageUrl: "",
+    },
   });
 
   useEffect(() => {
@@ -136,11 +148,19 @@ export function FarmProfile() {
             This farm has irrigation
           </label>
 
-          <Input
-            label="Farm image URL (optional)"
-            placeholder="https://…"
-            error={errors.imageUrl?.message}
-            {...register("imageUrl")}
+          <Controller
+            name="imageUrl"
+            control={control}
+            render={({ field }) => (
+              <ImageUploader
+                label="Farm Image (optional)"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.imageUrl?.message}
+                folder="farms"
+                hint="Upload a farm photo or provide an image link (JPG, PNG, WebP up to 5 MB)"
+              />
+            )}
           />
 
           <Button type="submit" size="lg" loading={save.isPending}>

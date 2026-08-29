@@ -234,8 +234,34 @@ export function FloatingAiAssistant() {
   const handleLanguageChange = (lang: LanguageCode) => {
     setSelectedLanguage(lang);
     localStorage.setItem("agriverse_ai_lang", lang);
+    localStorage.setItem("agriverse_lang", lang);
     setLangDropdownOpen(false);
   };
+
+  // Sync language with Settings changes
+  useEffect(() => {
+    function handleLangEvent(e: Event) {
+      const customEvent = e as CustomEvent<LanguageCode>;
+      if (customEvent.detail && (customEvent.detail === "en" || customEvent.detail === "te" || customEvent.detail === "hi")) {
+        setSelectedLanguage(customEvent.detail);
+      }
+    }
+
+    function handleStorageEvent(e: StorageEvent) {
+      if (e.key === "agriverse_lang" || e.key === "agriverse_ai_lang") {
+        if (e.newValue === "en" || e.newValue === "te" || e.newValue === "hi") {
+          setSelectedLanguage(e.newValue);
+        }
+      }
+    }
+
+    window.addEventListener("agriverse_language_changed", handleLangEvent);
+    window.addEventListener("storage", handleStorageEvent);
+    return () => {
+      window.removeEventListener("agriverse_language_changed", handleLangEvent);
+      window.removeEventListener("storage", handleStorageEvent);
+    };
+  }, []);
 
   // Scroll to bottom on new message
   useEffect(() => {

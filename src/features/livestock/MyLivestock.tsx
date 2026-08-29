@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +18,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
+import { ImageUploader } from "@/components/ui/ImageUploader";
 
 const schema = z.object({
   name: z.string().min(1, "Animal name is required"),
@@ -383,11 +384,19 @@ export function MyLivestock() {
             </div>
           )}
 
-          <Input
-            label="Photo URL (optional)"
-            placeholder="https://…"
-            error={errors.imageUrl?.message}
-            {...register("imageUrl")}
+          <Controller
+            name="imageUrl"
+            control={control}
+            render={({ field }) => (
+              <ImageUploader
+                label="Animal Photo (optional)"
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.imageUrl?.message}
+                folder="livestock"
+                hint="Upload an animal photo or paste an image URL (JPG, PNG, WebP up to 5 MB)"
+              />
+            )}
           />
           <Textarea
             label="Notes (optional)"

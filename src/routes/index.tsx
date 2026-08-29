@@ -50,11 +50,15 @@ import { DeliveryAvailable } from "@/features/delivery/DeliveryAvailable";
 import { DeliveryActive } from "@/features/delivery/DeliveryActive";
 import { DeliveryHistory } from "@/features/delivery/DeliveryHistory";
 import { DeliveryEarnings } from "@/features/delivery/DeliveryEarnings";
+import { I18nProvider } from "@/i18n/useTranslation";
 import { Login } from "@/features/auth/Login";
 import { Register } from "@/features/auth/Register";
 import { ForgotPassword } from "@/features/auth/ForgotPassword";
 import { VerifyOtp } from "@/features/auth/VerifyOtp";
 import { ResetPassword } from "@/features/auth/ResetPassword";
+import { Profile } from "@/features/account/Profile";
+import { Settings } from "@/features/account/Settings";
+import { Notifications } from "@/features/notifications/Notifications";
 import { NotFound } from "@/features/errors/NotFound";
 import { Unauthorized } from "@/features/errors/Unauthorized";
 
@@ -75,131 +79,133 @@ function RoleBranch({
 
 export function AppRoutes() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* ── Public ─────────────────────────────── */}
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<Landing />} />
-          <Route path="/marketplace" element={<ProductCatalog />} />
+    <I18nProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* ── Public ─────────────────────────────── */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Landing />} />
+            <Route path="/marketplace" element={<ProductCatalog />} />
+            <Route
+              path="/marketplace/:category"
+              element={<ProductCatalog />}
+            />
+            <Route path="/product/:id" element={<ProductDetail />} />
+            <Route
+              path="/livestock"
+              element={<LivestockMarketplace />}
+            />
+            <Route
+              path="/livestock/:id"
+              element={<LivestockDetail />}
+            />
+            <Route path="/weather" element={<WeatherPage />} />
+            <Route path="/market-prices" element={<MarketPrices />} />
+            <Route path="/about" element={<P title="About" />} />
+            <Route path="/contact" element={<P title="Contact" />} />
+          </Route>
+
+          {/* ── Auth ───────────────────────────────── */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/verify-otp" element={<VerifyOtp />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+          </Route>
+
+          {/* ── Farmer ─────────────────────────────── */}
+          <Route path="/app" element={<RoleBranch roles={["FARMER"]} />}>
+            <Route index element={<Navigate to="/app/dashboard" replace />} />
+            <Route path="dashboard" element={<FarmerDashboard />} />
+            <Route path="farm" element={<FarmProfile />} />
+            <Route path="crops" element={<CropManagement />} />
+            <Route path="livestock" element={<MyLivestock />} />
+            <Route path="expenses" element={<Expenses />} />
+            <Route path="analytics" element={<FarmerAnalytics />} />
+            <Route path="orders" element={<OrderList />} />
+            <Route path="orders/:id" element={<OrderDetail />} />
+            <Route path="schemes" element={<Schemes />} />
+            <Route path="vets" element={<BookVet />} />
+            <Route path="ai" element={<AiHub />} />
+            <Route path="cart" element={<Cart />} />
+            <Route path="checkout" element={<Checkout />} />
+            <Route path="order-success/:id" element={<OrderSuccess />} />
+          </Route>
+
+          {/* ── Seller ─────────────────────────────── */}
+          <Route path="/seller" element={<RoleBranch roles={["SELLER"]} />}>
+            <Route index element={<Navigate to="/seller/dashboard" replace />} />
+            <Route path="dashboard" element={<SellerDashboard />} />
+            <Route path="products" element={<SellerProducts />} />
+            <Route path="products/new" element={<ProductForm />} />
+            <Route
+              path="products/:id/edit"
+              element={<ProductForm />}
+            />
+            <Route path="orders" element={<SellerOrders />} />
+            <Route path="inventory" element={<SellerInventory />} />
+            <Route path="revenue" element={<SellerRevenue />} />
+          </Route>
+
+          {/* ── Admin ──────────────────────────────── */}
+          <Route path="/admin" element={<RoleBranch roles={["ADMIN"]} />}>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="users/:id" element={<AdminUserDetail />} />
+            <Route path="sellers" element={<AdminSellers />} />
+            <Route path="products" element={<AdminProducts />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="orders/:id" element={<AdminOrderDetail />} />
+            <Route path="schemes" element={<AdminSchemes />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+          </Route>
+
+          {/* ── Vet ────────────────────────────────── */}
+          <Route path="/vet" element={<RoleBranch roles={["VETERINARIAN"]} />}>
+            <Route index element={<Navigate to="/vet/dashboard" replace />} />
+            <Route path="dashboard" element={<VetDashboard />} />
+            <Route path="appointments" element={<VetAppointments />} />
+            <Route path="patients" element={<VetPatients />} />
+            <Route path="earnings" element={<VetEarnings />} />
+          </Route>
+
+          {/* ── Delivery ───────────────────────────── */}
           <Route
-            path="/marketplace/:category"
-            element={<ProductCatalog />}
-          />
-          <Route path="/product/:id" element={<ProductDetail />} />
+            path="/delivery"
+            element={<RoleBranch roles={["DELIVERY_PARTNER"]} />}
+          >
+            <Route
+              index
+              element={<Navigate to="/delivery/dashboard" replace />}
+            />
+            <Route path="dashboard" element={<DeliveryDashboard />} />
+            <Route path="available" element={<DeliveryAvailable />} />
+            <Route path="active" element={<DeliveryActive />} />
+            <Route path="history" element={<DeliveryHistory />} />
+            <Route path="earnings" element={<DeliveryEarnings />} />
+          </Route>
+
+          {/* ── Shared authenticated ───────────────── */}
           <Route
-            path="/livestock"
-            element={<LivestockMarketplace />}
-          />
-          <Route
-            path="/livestock/:id"
-            element={<LivestockDetail />}
-          />
-          <Route path="/weather" element={<WeatherPage />} />
-          <Route path="/market-prices" element={<MarketPrices />} />
-          <Route path="/about" element={<P title="About" />} />
-          <Route path="/contact" element={<P title="Contact" />} />
-        </Route>
+            element={
+              <RequireAuth>
+                <AppLayout />
+              </RequireAuth>
+            }
+          >
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
 
-        {/* ── Auth ───────────────────────────────── */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/verify-otp" element={<VerifyOtp />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-        </Route>
-
-        {/* ── Farmer ─────────────────────────────── */}
-        <Route path="/app" element={<RoleBranch roles={["FARMER"]} />}>
-          <Route index element={<Navigate to="/app/dashboard" replace />} />
-          <Route path="dashboard" element={<FarmerDashboard />} />
-          <Route path="farm" element={<FarmProfile />} />
-          <Route path="crops" element={<CropManagement />} />
-          <Route path="livestock" element={<MyLivestock />} />
-          <Route path="expenses" element={<Expenses />} />
-          <Route path="analytics" element={<FarmerAnalytics />} />
-          <Route path="orders" element={<OrderList />} />
-          <Route path="orders/:id" element={<OrderDetail />} />
-          <Route path="schemes" element={<Schemes />} />
-          <Route path="vets" element={<BookVet />} />
-          <Route path="ai" element={<AiHub />} />
-          <Route path="cart" element={<Cart />} />
-          <Route path="checkout" element={<Checkout />} />
-          <Route path="order-success/:id" element={<OrderSuccess />} />
-        </Route>
-
-        {/* ── Seller ─────────────────────────────── */}
-        <Route path="/seller" element={<RoleBranch roles={["SELLER"]} />}>
-          <Route index element={<Navigate to="/seller/dashboard" replace />} />
-          <Route path="dashboard" element={<SellerDashboard />} />
-          <Route path="products" element={<SellerProducts />} />
-          <Route path="products/new" element={<ProductForm />} />
-          <Route
-            path="products/:id/edit"
-            element={<ProductForm />}
-          />
-          <Route path="orders" element={<SellerOrders />} />
-          <Route path="inventory" element={<SellerInventory />} />
-          <Route path="revenue" element={<SellerRevenue />} />
-        </Route>
-
-        {/* ── Admin ──────────────────────────────── */}
-        <Route path="/admin" element={<RoleBranch roles={["ADMIN"]} />}>
-          <Route index element={<Navigate to="/admin/dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="users/:id" element={<AdminUserDetail />} />
-          <Route path="sellers" element={<AdminSellers />} />
-          <Route path="products" element={<AdminProducts />} />
-          <Route path="orders" element={<AdminOrders />} />
-          <Route path="orders/:id" element={<AdminOrderDetail />} />
-          <Route path="schemes" element={<AdminSchemes />} />
-          <Route path="analytics" element={<AdminAnalytics />} />
-        </Route>
-
-        {/* ── Vet ────────────────────────────────── */}
-        <Route path="/vet" element={<RoleBranch roles={["VETERINARIAN"]} />}>
-          <Route index element={<Navigate to="/vet/dashboard" replace />} />
-          <Route path="dashboard" element={<VetDashboard />} />
-          <Route path="appointments" element={<VetAppointments />} />
-          <Route path="patients" element={<VetPatients />} />
-          <Route path="earnings" element={<VetEarnings />} />
-        </Route>
-
-        {/* ── Delivery ───────────────────────────── */}
-        <Route
-          path="/delivery"
-          element={<RoleBranch roles={["DELIVERY_PARTNER"]} />}
-        >
-          <Route
-            index
-            element={<Navigate to="/delivery/dashboard" replace />}
-          />
-          <Route path="dashboard" element={<DeliveryDashboard />} />
-          <Route path="available" element={<DeliveryAvailable />} />
-          <Route path="active" element={<DeliveryActive />} />
-          <Route path="history" element={<DeliveryHistory />} />
-          <Route path="earnings" element={<DeliveryEarnings />} />
-        </Route>
-
-        {/* ── Shared authenticated ───────────────── */}
-        <Route
-          element={
-            <RequireAuth>
-              <AppLayout />
-            </RequireAuth>
-          }
-        >
-          <Route path="/notifications" element={<P title="Notifications" />} />
-          <Route path="/settings" element={<P title="Settings" />} />
-          <Route path="/profile" element={<P title="Profile" />} />
-        </Route>
-
-        {/* ── Errors ─────────────────────────────── */}
-        <Route path="/unauthorized" element={<Unauthorized />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-      <FloatingAiAssistant />
-    </BrowserRouter>
+          {/* ── Errors ─────────────────────────────── */}
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+        <FloatingAiAssistant />
+      </BrowserRouter>
+    </I18nProvider>
   );
 }

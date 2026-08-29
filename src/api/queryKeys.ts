@@ -47,6 +47,10 @@ export const qk = {
   deliveryAvailable: () => ["delivery", "available"] as const,
   deliveryPipeline: () => ["delivery", "pipeline"] as const,
   deliveryEarnings: () => ["delivery", "earnings"] as const,
+
+  notifications: () => ["notifications"] as const,
+  unreadNotificationsCount: () => ["notifications", "unread-count"] as const,
+  userSettings: () => ["settings"] as const,
 };
 
 
