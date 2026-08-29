@@ -87,6 +87,12 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface CheckEmailResponse {
+  exists: boolean;
+  isVerified?: boolean;
+  message?: string;
+}
+
 export interface RegisterRequest {
   fullName: string;
   email: string;
@@ -95,15 +101,10 @@ export interface RegisterRequest {
   role: Role;
   city?: string;
   state?: string;
+  supabaseUserId?: string;
 }
 
-export interface RegisterResponse {
-  success: boolean;
-  verificationRequired: boolean;
-  message: string;
-  email: string;
-  expiresIn?: number;
-}
+export type RegisterResponse = AuthResponse;
 
 export interface VerifyEmailRequest {
   email: string;
