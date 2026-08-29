@@ -4,7 +4,10 @@ import type {
   LoginRequest,
   OtpResponse,
   RegisterRequest,
+  RegisterResponse,
   UserProfileResponse,
+  VerifyEmailRequest,
+  ResendVerificationResponse,
 } from "../types";
 
 export const authApi = {
@@ -12,7 +15,13 @@ export const authApi = {
     api.post<AuthResponse>("/auth/login", body).then((r) => r.data),
 
   register: (body: RegisterRequest) =>
-    api.post<AuthResponse>("/auth/register", body).then((r) => r.data),
+    api.post<RegisterResponse>("/auth/register", body).then((r) => r.data),
+
+  verifyEmail: (body: VerifyEmailRequest) =>
+    api.post<{ success: boolean; message: string }>("/auth/verify-email", body).then((r) => r.data),
+
+  resendVerification: (email: string) =>
+    api.post<ResendVerificationResponse>("/auth/resend-verification", { email }).then((r) => r.data),
 
   me: () => api.get<UserProfileResponse>("/auth/me").then((r) => r.data),
 

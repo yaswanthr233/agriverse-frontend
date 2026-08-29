@@ -97,10 +97,30 @@ export interface RegisterRequest {
   state?: string;
 }
 
+export interface RegisterResponse {
+  success: boolean;
+  verificationRequired: boolean;
+  message: string;
+  email: string;
+  expiresIn?: number;
+}
+
+export interface VerifyEmailRequest {
+  email: string;
+  otp: string;
+}
+
+export interface ResendVerificationResponse {
+  success: boolean;
+  message: string;
+  alreadyVerified?: boolean;
+  cooldownSeconds?: number;
+}
+
 export interface OtpResponse {
   verified: boolean;
-  expiresInSeconds: number;
-  resent: boolean;
+  expiresInSeconds?: number;
+  resent?: boolean;
 }
 
 /* ── Products ─────────────────────────────────────────── */

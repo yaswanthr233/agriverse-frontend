@@ -37,6 +37,18 @@ export function Login() {
         ?.from?.pathname;
       navigate(from ?? homeRouteFor(auth.role), { replace: true });
     } catch (err) {
+      if (err instanceof ApiError && err.errorCode === "EMAIL_VERIFICATION_REQUIRED") {
+        // Redirect unverified users directly to OTP verification
+        navigate("/verify-email", {
+          state: {
+            email: values.email,
+            message: "Email verification is required before signing in. A fresh code has been sent to your email.",
+          },
+          replace: true,
+        });
+        return;
+      }
+
       // Never reveal WHICH field was wrong.
       setFormError(
         err instanceof ApiError && err.status === 401

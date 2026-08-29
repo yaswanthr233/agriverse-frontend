@@ -5,8 +5,6 @@ import { z } from "zod";
 import { Link, useNavigate } from "react-router-dom";
 import { authApi } from "@/api/endpoints/auth";
 import { ApiError } from "@/api/client";
-import { useAuthStore } from "@/stores/authStore";
-import { homeRouteFor } from "@/lib/roleRoutes";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
@@ -40,7 +38,6 @@ type FormValues = z.infer<typeof schema>;
 
 export function Register() {
   const navigate = useNavigate();
-  const setSession = useAuthStore((s) => s.setSession);
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -57,9 +54,13 @@ export function Register() {
     setFormError(null);
     try {
       const { confirmPassword: _ignored, ...payload } = values;
-      const auth = await authApi.register(payload);
-      setSession(auth); // registration logs the user straight in
-      navigate(homeRouteFor(auth.role), { replace: true });
+      const res = await authApi.register(payload);
+      // Registration creates an unverified user and triggers email verification OTP.
+      // Redirect straight to verification screen with email prefilled.
+      navigate("/verify-email", {
+        state: { email: values.email, message: res.message },
+        replace: true,
+      });
     } catch (err) {
       if (err instanceof ApiError && err.errors?.length) {
         // Map backend field errors onto the form rather than showing a toast.
