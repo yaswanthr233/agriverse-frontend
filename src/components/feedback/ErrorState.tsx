@@ -11,7 +11,13 @@ interface ErrorStateProps {
 }
 
 /** Never shows a status code or stack trace to the user. */
-export function ErrorState({ error, title: customTitle, description: customDescription, onRetry, className }: ErrorStateProps) {
+export function ErrorState({
+  error,
+  title: customTitle,
+  description: customDescription,
+  onRetry,
+  className,
+}: ErrorStateProps) {
   const status = error instanceof ApiError ? error.status : 500;
 
   const offline = status === 0;
@@ -19,17 +25,22 @@ export function ErrorState({ error, title: customTitle, description: customDescr
 
   const Icon = offline ? WifiOff : forbidden ? Lock : AlertTriangle;
 
-  const title = customTitle || (offline
-    ? "You appear to be offline"
-    : forbidden
-      ? "You don't have access to this"
-      : "Couldn't load this content");
+  let defaultTitle = "Couldn't load this content";
+  if (offline) {
+    defaultTitle = "You appear to be offline";
+  } else if (forbidden) {
+    defaultTitle = "You don't have access to this";
+  }
 
-  const description = customDescription || (offline
-    ? "Check your connection and try again."
-    : forbidden
-      ? "Your account doesn't have permission to view this page."
-      : "Something went wrong on our end. Please try again.");
+  let defaultDescription = "Something went wrong on our end. Please try again.";
+  if (offline) {
+    defaultDescription = "Check your connection and try again.";
+  } else if (forbidden) {
+    defaultDescription = "Your account doesn't have permission to view this page.";
+  }
+
+  const title = customTitle || defaultTitle;
+  const description = customDescription || defaultDescription;
 
   return (
     <div

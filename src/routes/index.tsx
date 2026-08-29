@@ -55,6 +55,7 @@ import { Login } from "@/features/auth/Login";
 import { Register } from "@/features/auth/Register";
 import { ForgotPassword } from "@/features/auth/ForgotPassword";
 import { VerifyOtp } from "@/features/auth/VerifyOtp";
+import { VerifyEmail } from "@/features/auth/VerifyEmail";
 import { ResetPassword } from "@/features/auth/ResetPassword";
 import { Profile } from "@/features/account/Profile";
 import { Settings } from "@/features/account/Settings";
@@ -109,6 +110,7 @@ export function AppRoutes() {
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/verify-otp" element={<VerifyOtp />} />
             <Route path="/reset-password" element={<ResetPassword />} />
