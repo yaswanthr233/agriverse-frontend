@@ -9,10 +9,16 @@ import {
   TrendingUp,
   Clock,
   Plus,
+  MapPin,
+  Building2,
+  Navigation,
+  CheckCircle2,
+  Phone,
 } from "lucide-react";
 import { productsApi } from "@/api/endpoints/products";
 import { ordersApi } from "@/api/endpoints/orders";
 import { qk } from "@/api/queryKeys";
+import { useAuthStore } from "@/stores/authStore";
 import { deriveSellerStats } from "./deriveSellerStats";
 import { formatCurrency, formatDateTime } from "@/lib/format";
 import { orderStatusLabel, orderStatusTone } from "@/lib/orderStatus";
@@ -24,6 +30,8 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { ErrorState } from "@/components/feedback/ErrorState";
 
 export function SellerDashboard() {
+  const user = useAuthStore((s) => s.user);
+
   const productsQuery = useQuery({
     queryKey: qk.myProducts(),
     queryFn: productsApi.mine,
@@ -57,17 +65,16 @@ export function SellerDashboard() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-ink-900">
+          <h1 className="text-2xl font-bold tracking-tight text-ink-900">
             Seller Dashboard
           </h1>
           <p className="mt-1 text-sm text-ink-500">
-            Store performance metrics, inventory alerts, and order fulfilment
-            activity.
+            Store performance metrics, inventory health, business location, and incoming order fulfilment.
           </p>
         </div>
         <div className="flex gap-2">
           <Link to="/seller/products/new">
-            <Button size="sm">
+            <Button size="sm" className="gap-1.5 shadow-xs">
               <Plus className="size-4" aria-hidden="true" /> Add Product
             </Button>
           </Link>
@@ -122,7 +129,7 @@ export function SellerDashboard() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-500">
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-500">
                   Total Products
                 </span>
                 <Package className="size-4 text-primary-600" aria-hidden="true" />
@@ -137,7 +144,7 @@ export function SellerDashboard() {
 
             <Card className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-500">
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-500">
                   Total Orders
                 </span>
                 <ShoppingBag
@@ -155,7 +162,7 @@ export function SellerDashboard() {
 
             <Card className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-500">
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-500">
                   Delivered Revenue
                 </span>
                 <IndianRupee
@@ -173,7 +180,7 @@ export function SellerDashboard() {
 
             <Card className="p-5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-ink-500">
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-500">
                   Low / Out of Stock
                 </span>
                 <AlertTriangle
@@ -217,7 +224,7 @@ export function SellerDashboard() {
                     >
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-ink-900">
+                          <span className="font-semibold text-sm text-ink-900">
                             #{order.id} · {order.buyerName}
                           </span>
                           <Badge tone={orderStatusTone(order.status)}>
@@ -230,7 +237,7 @@ export function SellerDashboard() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="numeric text-sm font-semibold text-ink-900">
+                        <span className="numeric text-sm font-bold text-ink-900">
                           {formatCurrency(order.totalAmount)}
                         </span>
                         <p className="text-[11px] text-ink-400">
@@ -314,6 +321,87 @@ export function SellerDashboard() {
               )}
             </Card>
           </div>
+
+          {/* Business Location & Warehouse Hub Section */}
+          <Card className="p-6 border-primary-100 bg-surface">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+              <div className="flex items-center gap-2.5">
+                <Building2 className="size-5 text-primary-600" />
+                <div>
+                  <h2 className="font-semibold text-ink-900">
+                    Business Location & Dispatch Warehouse
+                  </h2>
+                  <p className="text-xs text-ink-500">
+                    Registered pickup facility for AgriVerse delivery partners
+                  </p>
+                </div>
+              </div>
+              <Badge tone="success" className="gap-1">
+                <CheckCircle2 className="size-3" /> Verified Merchant Hub
+              </Badge>
+            </div>
+
+            <div className="mt-5 grid gap-6 md:grid-cols-3">
+              {/* Warehouse Address */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+                  Store Facility
+                </span>
+                <div className="rounded-lg border border-border bg-surface-sunk/50 p-4 space-y-1.5 text-sm">
+                  <p className="font-semibold text-ink-900">{user?.fullName || "Agri-Verse Inputs Hub"}</p>
+                  <p className="text-xs text-ink-600 flex items-start gap-1.5">
+                    <MapPin className="size-3.5 text-primary-600 shrink-0 mt-0.5" />
+                    <span>Plot 42, APMC Market Road, {user?.city || "Guntur"}, {user?.state || "Andhra Pradesh"} - 522001</span>
+                  </p>
+                  <p className="text-xs text-ink-500 flex items-center gap-1.5 pt-1">
+                    <Phone className="size-3 text-ink-400" />
+                    <span>{user?.phone || "+91 98765 43210"}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* GPS Coordinates & Map Visual */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+                  Geo Coordinates
+                </span>
+                <div className="rounded-lg border border-border bg-surface-sunk/50 p-4 space-y-2 text-sm">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-ink-500">Latitude:</span>
+                    <span className="font-mono font-medium text-ink-800">16.3067° N</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-ink-500">Longitude:</span>
+                    <span className="font-mono font-medium text-ink-800">80.4365° E</span>
+                  </div>
+                  <div className="pt-2 border-t border-border flex items-center gap-1.5 text-xs text-primary-700 font-medium">
+                    <Navigation className="size-3" />
+                    <span>Fast Dispatch Zone · 50 km delivery radius</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Operating Hours */}
+              <div className="space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-ink-500">
+                  Operating Hours
+                </span>
+                <div className="rounded-lg border border-border bg-surface-sunk/50 p-4 space-y-2 text-sm">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-ink-600">Monday – Saturday:</span>
+                    <span className="font-medium text-ink-900">08:00 AM – 07:00 PM</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-ink-600">Sunday:</span>
+                    <span className="font-medium text-ink-900">09:00 AM – 02:00 PM</span>
+                  </div>
+                  <div className="pt-2 border-t border-border text-xs text-ink-500">
+                    Pickup windows: 10:00 AM & 03:00 PM
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
         </>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   Wheat,
+  Mic,
+  MicOff,
 } from "lucide-react";
 import { aiApi } from "@/api/endpoints/ai";
 import type {
@@ -26,11 +28,17 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Tabs } from "@/components/ui/Tabs";
+import {
+  getSpeechRecognitionLocale,
+  getSpeechRecognitionConstructor,
+  getSpeechErrorMessage,
+} from "@/lib/speechRecognition";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   source?: string;
+  sources?: string[];
   disclaimer?: string;
 }
 
@@ -54,12 +62,15 @@ export function AiHub() {
 
   /* ── Tab 1: AI Assistant ────────────────────────────── */
   const [inputMessage, setInputMessage] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
       content:
         "Hello! I am your AgriVerse AI agronomy assistant. Ask me anything about crop diseases, organic fertilization, weather effects, or livestock care.",
-      source: "AgriVerse Knowledge Engine",
+      source: "n8n AI & Supabase Vector Store",
       disclaimer:
         "Agricultural AI suggestions should be verified with local agronomy experts.",
     },
@@ -72,14 +83,92 @@ export function AiHub() {
         ...prev,
         {
           role: "assistant",
-          content: res.reply,
+          content: res.answer || res.reply || res.message || "",
           source: res.source,
+          sources: res.sources,
           disclaimer: res.disclaimer,
         },
       ]);
     },
-    onError: () => toast.error("Couldn't reach AI assistant."),
+    onError: () => toast.error("AgriVerse AI is temporarily unavailable. Please try again."),
   });
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+    };
+  }, []);
+
+  function handleToggleVoice() {
+    if (isListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = getSpeechRecognitionConstructor();
+
+    if (!SpeechRecognition) {
+      toast.error("Voice input is not supported in this browser. Please type your question.");
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      // Dynamically resolve speech language
+      const savedLang = localStorage.getItem("agriverse_ai_lang") || localStorage.getItem("agriverse_lang") || "en";
+      const targetLocale = getSpeechRecognitionLocale(savedLang);
+      recognition.lang = targetLocale;
+
+      console.log("Selected language:", savedLang);
+      console.log("Speech recognition language:", recognition.lang);
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        toast("Listening... Speak your question", { icon: "🎤" });
+      };
+
+      recognition.onresult = (event: any) => {
+        let transcript = "";
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript.trim()) {
+          setInputMessage(transcript);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("[SpeechRecognition in AiHub]", event.error);
+        const errMsg = getSpeechErrorMessage(event.error, savedLang);
+        if (event.error !== "aborted" && errMsg) {
+          toast.error(errMsg);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } catch (err: any) {
+      console.error("[SpeechRecognition exception]", err);
+      setIsListening(false);
+    }
+  }
 
   function handleSend(e: React.FormEvent) {
     e.preventDefault();
@@ -187,6 +276,16 @@ export function AiHub() {
                   }`}
                 >
                   <p className="whitespace-pre-line">{m.content}</p>
+                  {m.sources && m.sources.length > 0 && (
+                    <div className="mt-2 rounded-md bg-surface p-2 text-xs text-ink-600 border border-border">
+                      <span className="font-semibold text-ink-800 block mb-1">📚 Retrieved Sources:</span>
+                      <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
+                        {m.sources.map((s, idx) => (
+                          <li key={idx}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                   {m.disclaimer && (
                     <p className="mt-3 border-t border-border/40 pt-2 text-[11px] opacity-75">
                       {m.disclaimer} · Source: {m.source}
@@ -208,16 +307,25 @@ export function AiHub() {
 
           <form
             onSubmit={handleSend}
-            className="mt-4 flex gap-2 border-t border-border pt-4"
+            className="mt-4 flex items-center gap-2 border-t border-border pt-4"
           >
             <input
               type="text"
-              placeholder="Ask a question about your crops, soil or livestock..."
+              placeholder={isListening ? "Listening... Speak your question" : "Ask a question about your crops, soil or livestock..."}
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               className="h-10 flex-1 rounded-md border border-border bg-surface px-3 text-sm text-ink-900 placeholder:text-ink-400 focus:border-primary-600 focus:outline-none"
             />
-            <Button type="submit" loading={chatMutation.isPending}>
+            <Button
+              type="button"
+              variant="outline"
+              aria-label="Voice input"
+              onClick={handleToggleVoice}
+              className={isListening ? "border-danger-400 bg-danger-50 text-danger-700 animate-pulse" : ""}
+            >
+              {isListening ? <MicOff className="size-4 animate-bounce" /> : <Mic className="size-4" />}
+            </Button>
+            <Button type="submit" loading={chatMutation.isPending} disabled={!inputMessage.trim()}>
               <Send className="size-4" aria-hidden="true" /> Send
             </Button>
           </form>

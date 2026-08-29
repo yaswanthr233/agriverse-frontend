@@ -403,27 +403,40 @@ export interface AppointmentRequest {
   animalDescription?: string;
   scheduledAt: string;
   notes?: string;
+  locationLatitude?: number | null;
+  locationLongitude?: number | null;
+  locationAddress?: string | null;
 }
 
 export interface AppointmentResponse {
   id: number;
   farmerName: string;
   farmerEmail: string;
+  farmerPhone?: string | null;
   vetName: string;
   vetEmail: string;
+  vetPhone?: string | null;
+  vetCity?: string | null;
+  vetState?: string | null;
   animalDescription: string | null;
   scheduledAt: string;
   status: string;
   notes: string | null;
   vetNotes: string | null;
+  locationLatitude?: number | null;
+  locationLongitude?: number | null;
+  locationAddress?: string | null;
+  googleMapsUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface AiChatResponse {
   reply: string;
+  answer?: string;
   message?: string;
   source: string;
+  sources?: string[];
   disclaimer: string;
   language?: string;
   category?: string;

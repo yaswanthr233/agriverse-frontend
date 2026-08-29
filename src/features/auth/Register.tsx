@@ -16,10 +16,10 @@ const OTP_LENGTH = 6;
 const EXPIRY_SECONDS = 300; // 5 minutes
 const RESEND_COOLDOWN = 60; // 60 seconds
 
+// Delivery partners and Admins are provisioned by administration
 const SELECTABLE_ROLES = [
   { value: "FARMER", label: "Farmer" },
   { value: "SELLER", label: "Seller" },
-  { value: "DELIVERY_PARTNER", label: "Delivery Partner" },
   { value: "VETERINARIAN", label: "Veterinarian" },
 ] as const;
 
@@ -33,7 +33,7 @@ const schema = z
     phone: z.string().min(10, "Phone number must be at least 10 digits"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
-    role: z.enum(["FARMER", "SELLER", "DELIVERY_PARTNER", "VETERINARIAN"]),
+    role: z.enum(["FARMER", "SELLER", "VETERINARIAN"]),
     city: z.string().optional(),
     state: z.string().optional(),
   })

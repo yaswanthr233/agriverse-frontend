@@ -14,4 +14,8 @@ export const vetsApi = {
       .then((r) => r.data),
   myAppointments: () =>
     api.get<AppointmentResponse[]>("/api/appointments/my").then((r) => r.data),
+  cancel: (id: number, reason?: string) =>
+    api
+      .post<AppointmentResponse>(`/api/appointments/${id}/cancel`, { reason })
+      .then((r) => r.data),
 };

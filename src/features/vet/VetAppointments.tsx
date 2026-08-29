@@ -6,12 +6,22 @@ import {
   User,
   Edit2,
   Stethoscope,
+  Check,
+  X,
+  Play,
+  CheckCheck,
+  Phone,
+  Mail,
+  MapPin,
+  ExternalLink,
+  Navigation,
 } from "lucide-react";
 import { vetPortalApi } from "@/api/endpoints/vetPortal";
 import { qk } from "@/api/queryKeys";
 import type { AppointmentResponse, AppointmentStatus } from "@/api/types";
 import { ApiError } from "@/api/client";
 import { formatDateTime, formatEnum } from "@/lib/format";
+import { getGoogleMapsUrl } from "@/lib/location";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -34,11 +44,11 @@ function appointmentStatusTone(
 ): "neutral" | "primary" | "success" | "danger" | "warning" {
   switch (status) {
     case "CONFIRMED":
-      return "primary";
+      return "success";
     case "IN_PROGRESS":
       return "warning";
     case "COMPLETED":
-      return "success";
+      return "primary";
     case "CANCELLED":
       return "danger";
     default:
@@ -76,8 +86,8 @@ export function VetAppointments() {
       status: AppointmentStatus;
       vetNotes?: string;
     }) => vetPortalApi.updateStatus(id, status, vetNotes),
-    onSuccess: () => {
-      toast.success("Appointment updated successfully");
+    onSuccess: (updated) => {
+      toast.success(`Appointment #${updated.id} marked as ${updated.status}`);
       setUpdatingAppt(null);
       void queryClient.invalidateQueries({ queryKey: qk.vetSchedule() });
       void queryClient.invalidateQueries({ queryKey: qk.vetEarnings() });
@@ -109,14 +119,16 @@ export function VetAppointments() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-ink-900">
-          Veterinary Appointments
-        </h1>
-        <p className="mt-1 text-sm text-ink-500">
-          Manage consultations, clinical visit requests, diagnostics, and
-          prescriptions.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-ink-900">
+            Veterinary Consultation Schedule
+          </h1>
+          <p className="mt-1 text-sm text-ink-500">
+            Review incoming consultation requests, verify farmer visit locations, and prescribe treatments.
+          </p>
+        </div>
+        <Badge tone="neutral">{apptList.length} Total Visits</Badge>
       </div>
 
       {/* Filter Tabs */}
@@ -128,7 +140,7 @@ export function VetAppointments() {
             onClick={() => setStatusFilter(tab)}
             className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors ${
               statusFilter === tab
-                ? "bg-primary-600 text-white"
+                ? "bg-primary-600 text-white shadow-xs"
                 : "bg-surface-sunk text-ink-700 hover:bg-surface-raised"
             }`}
           >
@@ -157,59 +169,171 @@ export function VetAppointments() {
 
       {!isLoading && !isError && sorted.length > 0 && (
         <div className="space-y-4">
-          {sorted.map((appt) => (
-            <Card key={appt.id} className="p-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-ink-900">
-                      {appt.animalDescription || "Livestock Consultation"}
-                    </h3>
-                    <Badge tone={appointmentStatusTone(appt.status)}>
-                      {formatEnum(appt.status)}
-                    </Badge>
+          {sorted.map((appt) => {
+            const mapsUrl = appt.googleMapsUrl || getGoogleMapsUrl(appt.locationLatitude, appt.locationLongitude);
+            return (
+              <Card key={appt.id} className="p-5 hover:border-primary-300 transition-colors">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1 space-y-2.5">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-semibold text-ink-900 text-base">
+                        {appt.animalDescription || "Livestock Consultation"}
+                      </h3>
+                      <Badge tone={appointmentStatusTone(appt.status)}>
+                        {formatEnum(appt.status)}
+                      </Badge>
+                      <span className="text-xs text-ink-400 font-mono">
+                        #{appt.id}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 text-xs text-ink-600">
+                      <span className="flex items-center gap-1.5">
+                        <User className="size-3.5 text-primary-600" aria-hidden="true" />
+                        <strong>Farmer:</strong> {appt.farmerName}
+                      </span>
+                      {appt.farmerEmail && (
+                        <span className="flex items-center gap-1 text-ink-500">
+                          <Mail className="size-3 text-ink-400" />
+                          {appt.farmerEmail}
+                        </span>
+                      )}
+                      {appt.farmerPhone && (
+                        <span className="flex items-center gap-1 text-ink-500">
+                          <Phone className="size-3 text-ink-400" />
+                          {appt.farmerPhone}
+                        </span>
+                      )}
+                      <span className="flex items-center gap-1.5">
+                        <Clock className="size-3.5 text-ink-400" aria-hidden="true" />
+                        <strong>Scheduled:</strong>{" "}
+                        {formatDateTime(appt.scheduledAt)}
+                      </span>
+                    </div>
+
+                    {/* Visit Location Card Section */}
+                    <div className="rounded-lg border border-border/80 bg-surface-sunk p-3 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-ink-800 flex items-center gap-1.5">
+                          <MapPin className="size-3.5 text-primary-600" /> Farm / Visit Location:
+                        </span>
+                        {mapsUrl && (
+                          <a
+                            href={mapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 font-semibold text-primary-700 hover:text-primary-800 text-[11px] bg-white border border-primary-200 px-2 py-0.5 rounded shadow-2xs"
+                          >
+                            <Navigation className="size-3 text-primary-600" /> Open in Google Maps
+                            <ExternalLink className="size-2.5" />
+                          </a>
+                        )}
+                      </div>
+
+                      {appt.locationAddress ? (
+                        <p className="text-ink-700 text-xs">
+                          {appt.locationAddress}
+                        </p>
+                      ) : appt.locationLatitude != null && appt.locationLongitude != null ? (
+                        <p className="text-ink-600 text-[11px] font-mono">
+                          Latitude: {appt.locationLatitude.toFixed(6)}, Longitude: {appt.locationLongitude.toFixed(6)}
+                        </p>
+                      ) : (
+                        <p className="text-ink-400 text-xs italic">
+                          Location not available for this appointment.
+                        </p>
+                      )}
+
+                      {appt.locationLatitude != null && appt.locationLongitude != null && appt.locationAddress && (
+                        <p className="text-[10px] text-ink-400 font-mono">
+                          Coordinates: {appt.locationLatitude.toFixed(5)}, {appt.locationLongitude.toFixed(5)}
+                        </p>
+                      )}
+                    </div>
+
+                    {appt.notes && (
+                      <div className="rounded-lg bg-surface-sunk p-3 text-xs text-ink-700">
+                        <strong>Farmer Case Notes:</strong> {appt.notes}
+                      </div>
+                    )}
+
+                    {appt.vetNotes && (
+                      <div className="rounded-lg border border-primary-100 bg-primary-50/60 p-3 text-xs text-primary-900">
+                        <strong>Clinical Notes & Prescription:</strong>{" "}
+                        {appt.vetNotes}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-4 text-xs text-ink-500">
-                    <span className="flex items-center gap-1">
-                      <User className="size-3.5" aria-hidden="true" />
-                      <strong>Farmer:</strong> {appt.farmerName} (
-                      {appt.farmerEmail})
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="size-3.5" aria-hidden="true" />
-                      <strong>Scheduled:</strong>{" "}
-                      {formatDateTime(appt.scheduledAt)}
-                    </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Quick Action Buttons */}
+                    {appt.status === "PENDING" && (
+                      <>
+                        <Button
+                          size="sm"
+                          className="bg-success-600 hover:bg-success-700 text-white gap-1 text-xs"
+                          loading={updateMutation.isPending}
+                          onClick={() =>
+                            updateMutation.mutate({
+                              id: appt.id,
+                              status: "CONFIRMED",
+                            })
+                          }
+                        >
+                          <Check className="size-3.5" /> Accept
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-danger-700 border-danger-200 hover:bg-danger-50 text-xs gap-1"
+                          onClick={() => openUpdateModal(appt)}
+                        >
+                          <X className="size-3.5" /> Decline
+                        </Button>
+                      </>
+                    )}
+
+                    {appt.status === "CONFIRMED" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-primary-700 border-primary-300 hover:bg-primary-50 text-xs gap-1"
+                        loading={updateMutation.isPending}
+                        onClick={() =>
+                          updateMutation.mutate({
+                            id: appt.id,
+                            status: "IN_PROGRESS",
+                          })
+                        }
+                      >
+                        <Play className="size-3.5" /> Start Visit
+                      </Button>
+                    )}
+
+                    {appt.status === "IN_PROGRESS" && (
+                      <Button
+                        size="sm"
+                        className="bg-primary-600 hover:bg-primary-700 text-white gap-1 text-xs"
+                        onClick={() => openUpdateModal(appt)}
+                      >
+                        <CheckCheck className="size-3.5" /> Complete Visit
+                      </Button>
+                    )}
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs"
+                      onClick={() => openUpdateModal(appt)}
+                    >
+                      <Edit2 className="mr-1.5 size-3.5" aria-hidden="true" />
+                      Edit Notes
+                    </Button>
                   </div>
-
-                  {appt.notes && (
-                    <div className="rounded bg-surface-sunk p-2.5 text-xs text-ink-700">
-                      <strong>Farmer Notes:</strong> {appt.notes}
-                    </div>
-                  )}
-
-                  {appt.vetNotes && (
-                    <div className="rounded border border-primary-100 bg-primary-50/50 p-2.5 text-xs text-primary-900">
-                      <strong>Clinical Notes & Prescription:</strong>{" "}
-                      {appt.vetNotes}
-                    </div>
-                  )}
                 </div>
-
-                <div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openUpdateModal(appt)}
-                  >
-                    <Edit2 className="mr-1.5 size-3.5" aria-hidden="true" />
-                    Update Status & Notes
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -220,6 +344,30 @@ export function VetAppointments() {
         title={`Update Appointment #${updatingAppt?.id}`}
       >
         <div className="space-y-4">
+          {/* Visit Location in Update Modal */}
+          {updatingAppt && (updatingAppt.locationAddress || (updatingAppt.locationLatitude != null && updatingAppt.locationLongitude != null)) && (
+            <div className="rounded-lg border border-border bg-surface-sunk p-3 text-xs space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-ink-800 flex items-center gap-1">
+                  <MapPin className="size-3.5 text-primary-600" /> Farm Location:
+                </span>
+                {(updatingAppt.googleMapsUrl || getGoogleMapsUrl(updatingAppt.locationLatitude, updatingAppt.locationLongitude)) && (
+                  <a
+                    href={updatingAppt.googleMapsUrl || getGoogleMapsUrl(updatingAppt.locationLatitude, updatingAppt.locationLongitude) || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-700 hover:underline flex items-center gap-1"
+                  >
+                    Open in Google Maps <ExternalLink className="size-3" />
+                  </a>
+                )}
+              </div>
+              <p className="text-ink-600">
+                {updatingAppt.locationAddress || `Lat: ${updatingAppt.locationLatitude}, Long: ${updatingAppt.locationLongitude}`}
+              </p>
+            </div>
+          )}
+
           <Select
             label="Appointment Status"
             options={STATUS_OPTIONS}
