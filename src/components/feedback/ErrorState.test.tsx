@@ -29,4 +29,16 @@ describe("ErrorState", () => {
     );
     expect(screen.getByText("You appear to be offline")).toBeInTheDocument();
   });
+
+  it("supports custom title and description overrides", () => {
+    render(
+      <ErrorState
+        error={new ApiError("Not found", 404)}
+        title="Couldn't load available orders."
+        description="Please check back in a moment."
+      />,
+    );
+    expect(screen.getByText("Couldn't load available orders.")).toBeInTheDocument();
+    expect(screen.getByText("Please check back in a moment.")).toBeInTheDocument();
+  });
 });

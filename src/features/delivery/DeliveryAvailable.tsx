@@ -58,7 +58,13 @@ export function DeliveryAvailable() {
   }
 
   if (isError) {
-    return <ErrorState error={error} onRetry={() => void refetch()} />;
+    return (
+      <ErrorState
+        error={error}
+        title="Couldn't load available orders."
+        onRetry={() => void refetch()}
+      />
+    );
   }
 
   return (
@@ -81,7 +87,7 @@ export function DeliveryAvailable() {
         {data && data.length === 0 ? (
           <EmptyState
             icon={PackageCheck}
-            title="No orders available right now"
+            title="No orders are currently available"
             description="When sellers ship orders, they'll appear here to claim."
           />
         ) : (

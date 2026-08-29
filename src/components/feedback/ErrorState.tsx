@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/Button";
 
 interface ErrorStateProps {
   error: unknown;
+  title?: string;
+  description?: string;
   onRetry?: () => void;
   className?: string;
 }
 
 /** Never shows a status code or stack trace to the user. */
-export function ErrorState({ error, onRetry, className }: ErrorStateProps) {
+export function ErrorState({ error, title: customTitle, description: customDescription, onRetry, className }: ErrorStateProps) {
   const status = error instanceof ApiError ? error.status : 500;
 
   const offline = status === 0;
@@ -17,17 +19,17 @@ export function ErrorState({ error, onRetry, className }: ErrorStateProps) {
 
   const Icon = offline ? WifiOff : forbidden ? Lock : AlertTriangle;
 
-  const title = offline
+  const title = customTitle || (offline
     ? "You appear to be offline"
     : forbidden
       ? "You don't have access to this"
-      : "Couldn't load this content";
+      : "Couldn't load this content");
 
-  const description = offline
+  const description = customDescription || (offline
     ? "Check your connection and try again."
     : forbidden
       ? "Your account doesn't have permission to view this page."
-      : "Something went wrong on our end. Please try again.";
+      : "Something went wrong on our end. Please try again.");
 
   return (
     <div
