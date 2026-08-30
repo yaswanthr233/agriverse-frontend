@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { ShoppingBag, Clock, User, MapPin } from "lucide-react";
+import { ShoppingBag, Clock, User, MapPin, CheckCircle2 } from "lucide-react";
 import { ordersApi } from "@/api/endpoints/orders";
 import { qk } from "@/api/queryKeys";
 import type { OrderResponse, OrderStatus } from "@/api/types";
@@ -18,10 +18,9 @@ import { ErrorState } from "@/components/feedback/ErrorState";
 
 const FILTER_TABS = [
   { id: "ALL", label: "All Orders" },
-  { id: "PENDING", label: "Pending" },
+  { id: "PENDING", label: "Pending Confirmation" },
   { id: "CONFIRMED", label: "Confirmed" },
-  { id: "PACKED", label: "Packed" },
-  { id: "SHIPPED", label: "Shipped" },
+  { id: "SHIPPED", label: "Shipped / In Transit" },
   { id: "DELIVERED", label: "Delivered" },
   { id: "CANCELLED", label: "Cancelled" },
 ];
@@ -41,30 +40,38 @@ export function SellerOrders() {
     queryFn: ordersApi.seller,
   });
 
-  const advance = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: OrderStatus }) =>
-      ordersApi.updateStatus(id, status),
+  const confirmOrder = useMutation({
+    mutationFn: ({ id }: { id: number }) =>
+      ordersApi.updateStatus(id, "CONFIRMED"),
     onSuccess: (updated) => {
       toast.success(
-        `Order #${updated.id} marked as ${orderStatusLabel(updated.status)}`,
+        `Order #${updated.id} confirmed! It is now available for delivery partners.`,
       );
       void queryClient.invalidateQueries({ queryKey: qk.sellerOrders() });
     },
-    onError: () => toast.error("Couldn't update order status."),
+    onError: () => toast.error("Couldn't confirm order."),
   });
 
   const filtered =
-    orders?.filter(
-      (o) => activeStatus === "ALL" || o.status === activeStatus,
-    ) ?? [];
+    orders?.filter((o) => {
+      if (activeStatus === "ALL") return true;
+      if (activeStatus === "SHIPPED") {
+        return (
+          o.status === "CLAIMED" ||
+          o.status === "DISPATCHED" ||
+          o.status === "SHIPPED" ||
+          o.status === "OUT_FOR_DELIVERY"
+        );
+      }
+      return o.status === activeStatus;
+    }) ?? [];
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-ink-900">Seller Orders</h1>
         <p className="mt-1 text-sm text-ink-500">
-          Process, confirm, pack, and advance fulfilment on incoming customer
-          orders.
+          Review and confirm customer orders. Once confirmed, delivery partners manage pickup, dispatch, and final delivery.
         </p>
       </div>
 
@@ -88,7 +95,7 @@ export function SellerOrders() {
         <EmptyState
           icon={ShoppingBag}
           title="No orders yet"
-          description="Orders for your listed products will appear here as buyers place them."
+          description="Orders for your listed products will appear here as farmers place them."
         />
       )}
 
@@ -105,6 +112,7 @@ export function SellerOrders() {
       <div className="space-y-4">
         {filtered.map((order: OrderResponse) => {
           const next = nextStatusesFor("SELLER", order.status);
+          const isPending = order.status === "PENDING";
 
           return (
             <Card key={order.id} className="space-y-4 p-5">
@@ -141,8 +149,7 @@ export function SellerOrders() {
                 <div className="flex items-center gap-1.5">
                   <User className="size-3.5 text-ink-400" aria-hidden="true" />
                   <span>
-                    <strong>Buyer:</strong> {order.buyerName} (
-                    {order.buyerEmail})
+                    <strong>Buyer:</strong> {order.buyerName} ({order.buyerEmail})
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -174,33 +181,46 @@ export function SellerOrders() {
                 ))}
               </div>
 
-              {/* Fulfilment Action Control */}
+              {/* Seller Action Control */}
               <div className="flex items-center justify-between pt-2">
-                <span className="text-xs text-ink-400">
-                  {order.status === "SHIPPED"
-                    ? "Shipped — delivery partner handles transit & drop-off."
-                    : order.status === "DELIVERED"
-                      ? "Order completed and delivered to customer."
-                      : order.status === "CANCELLED"
-                        ? "Order has been cancelled."
-                        : `Current Stage: ${orderStatusLabel(order.status)}`}
+                <span className="text-xs text-ink-500">
+                  {order.status === "PENDING"
+                    ? "Pending seller confirmation before assigning to delivery."
+                    : order.status === "CONFIRMED"
+                      ? "Confirmed — available for delivery partners to claim & dispatch."
+                      : order.status === "CLAIMED"
+                        ? "Claimed by delivery partner — preparing for dispatch."
+                        : order.status === "DISPATCHED" || order.status === "SHIPPED"
+                          ? "In transit with delivery partner."
+                          : order.status === "OUT_FOR_DELIVERY"
+                            ? "Out for final delivery to customer."
+                            : order.status === "DELIVERED"
+                              ? "Order fulfilled and delivered successfully."
+                              : order.status === "CANCELLED"
+                                ? "Order has been cancelled."
+                                : `Current Stage: ${orderStatusLabel(order.status)}`}
                 </span>
 
-                {next.length > 0 ? (
+                {isPending && next.includes("CONFIRMED") ? (
                   <Button
                     size="sm"
                     loading={
-                      advance.isPending && advance.variables?.id === order.id
+                      confirmOrder.isPending &&
+                      confirmOrder.variables?.id === order.id
                     }
-                    onClick={() =>
-                      advance.mutate({ id: order.id, status: next[0] })
-                    }
+                    onClick={() => confirmOrder.mutate({ id: order.id })}
+                    className="gap-1.5"
                   >
-                    Mark as {orderStatusLabel(next[0])}
+                    <CheckCircle2 className="size-4" />
+                    Confirm Order
                   </Button>
                 ) : (
-                  <span className="text-xs font-medium text-ink-500">
-                    No action available
+                  <span className="text-xs font-medium text-ink-400">
+                    {order.status === "CONFIRMED"
+                      ? "Awaiting Delivery Partner"
+                      : order.status === "DELIVERED"
+                        ? "Fulfilled"
+                        : "Managed by Delivery Partner"}
                   </span>
                 )}
               </div>

@@ -33,9 +33,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         email: res.email,
         phone: res.phone,
         role: res.role,        // ← the single source of role
+        houseStreetNo: res.houseStreetNo,
+        pincode: res.pincode,
+        district: res.district,
         city: res.city,
         state: res.state,
+        latitude: res.latitude,
+        longitude: res.longitude,
         isVerified: res.isVerified,
+        verificationStatus: res.verificationStatus,
+        veterinarianProfile: res.veterinarianProfile,
         avatarUrl: res.avatarUrl,
       },
     });

@@ -113,10 +113,31 @@ export function OrderDetail() {
           </Card>
 
           <Card className="p-5">
-            <h2 className="font-semibold text-ink-900">Delivery address</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-ink-900">Delivery Address & GPS</h2>
+              {order.deliveryLatitude != null && order.deliveryLongitude != null && (
+                <Badge tone="success" className="text-xs">GPS Verified</Badge>
+              )}
+            </div>
             <p className="mt-2 whitespace-pre-line text-sm text-ink-700">
               {order.deliveryAddress}
             </p>
+            {order.deliveryLatitude != null && order.deliveryLongitude != null ? (
+              <div className="mt-3 flex items-center justify-between rounded-lg bg-surface-sunk p-3 text-xs">
+                <span className="font-mono text-ink-600">
+                  GPS: {order.deliveryLatitude.toFixed(6)}, {order.deliveryLongitude.toFixed(6)}
+                  {order.deliveryAccuracy != null ? ` (Accuracy: ~${Math.round(order.deliveryAccuracy)}m)` : ""}
+                </span>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${order.deliveryLatitude},${order.deliveryLongitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-primary-600 hover:text-primary-700 hover:underline"
+                >
+                  View on Map ↗
+                </a>
+              </div>
+            ) : null}
           </Card>
         </div>
 

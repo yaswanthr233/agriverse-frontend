@@ -12,6 +12,19 @@ export function getGoogleMapsUrl(
   return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
 }
 
+export interface ReverseGeocodeComponents {
+  houseStreetNo: string;
+  pincode: string;
+  state: string;
+  district: string;
+  city?: string;
+}
+
+export interface ReverseGeocodeResult {
+  address: string | null;
+  components: ReverseGeocodeComponents | null;
+}
+
 /**
  * Attempts reverse geocoding from latitude and longitude coordinates.
  * Gracefully returns null if network is unavailable or request fails.
@@ -21,10 +34,26 @@ export async function reverseGeocode(
   longitude: number
 ): Promise<string | null> {
   try {
+    const details = await reverseGeocodeDetailed(latitude, longitude);
+    return details.address;
+  } catch (err) {
+    console.warn("[location] Reverse geocoding fallback:", err);
+    return null;
+  }
+}
+
+/**
+ * Detailed reverse geocoder returning both formatted address string and structured components.
+ */
+export async function reverseGeocodeDetailed(
+  latitude: number,
+  longitude: number
+): Promise<ReverseGeocodeResult> {
+  try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 6000);
 
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&lat=${latitude}&lon=${longitude}`;
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
@@ -33,22 +62,45 @@ export async function reverseGeocode(
     });
     clearTimeout(timer);
 
-    if (!res.ok) return null;
+    if (!res.ok) return { address: null, components: null };
     const data = await res.json();
-    if (data?.display_name) {
-      return data.display_name;
-    }
-    return null;
+    const addr = data?.address || {};
+
+    const streetParts = [
+      addr.house_number || addr.house_name || addr.building,
+      addr.road || addr.street || addr.suburb || addr.neighbourhood || addr.residential || addr.village,
+    ].filter(Boolean);
+
+    const houseStreetNo = streetParts.join(", ");
+    const pincode = (addr.postcode || "").replace(/\D/g, "").slice(0, 6);
+    const state = addr.state || "";
+    const district = addr.state_district || addr.district || addr.county || addr.city || addr.town || "";
+    const city = addr.city || addr.town || addr.village || "";
+
+    const components: ReverseGeocodeComponents = {
+      houseStreetNo,
+      pincode,
+      state,
+      district,
+      city,
+    };
+
+    return {
+      address: data?.display_name || null,
+      components,
+    };
   } catch (err) {
     console.warn("[location] Reverse geocoding fallback:", err);
-    return null;
+    return { address: null, components: null };
   }
 }
 
 export interface GpsLocationResult {
   latitude: number;
   longitude: number;
+  accuracy?: number | null;
   address: string | null;
+  components?: ReverseGeocodeComponents | null;
 }
 
 /**
@@ -66,18 +118,25 @@ export function getCurrentGpsLocation(): Promise<GpsLocationResult> {
       async (pos) => {
         const latitude = pos.coords.latitude;
         const longitude = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy ?? null;
 
         let address: string | null = null;
+        let components: ReverseGeocodeComponents | null = null;
         try {
-          address = await reverseGeocode(latitude, longitude);
+          const res = await reverseGeocodeDetailed(latitude, longitude);
+          address = res.address;
+          components = res.components;
         } catch {
           address = null;
+          components = null;
         }
 
         resolve({
           latitude,
           longitude,
+          accuracy,
           address,
+          components,
         });
       },
       (error) => {
@@ -85,14 +144,14 @@ export function getCurrentGpsLocation(): Promise<GpsLocationResult> {
         switch (error.code) {
           case error.PERMISSION_DENIED:
             msg =
-              "Location permission was denied. Please allow location access in your browser settings and try again.";
+              "Location permission was denied. Please enter your address manually.";
             break;
           case error.POSITION_UNAVAILABLE:
             msg =
-              "Unable to determine your current location. Please check your GPS signal and try again.";
+              "Unable to detect your location. Please enter your address manually.";
             break;
           case error.TIMEOUT:
-            msg = "Location request timed out. Please try again.";
+            msg = "Location request timed out. Please enter your address manually.";
             break;
         }
         reject(new Error(msg));
@@ -105,4 +164,3 @@ export function getCurrentGpsLocation(): Promise<GpsLocationResult> {
     );
   });
 }
-

@@ -7,6 +7,7 @@ import {
   Package,
   ArrowRight,
   ImageOff,
+  ShieldCheck,
 } from "lucide-react";
 import { adminApi } from "@/api/endpoints/admin";
 import { qk } from "@/api/queryKeys";
@@ -61,6 +62,32 @@ export function AdminDashboard() {
 
       {!isLoading && !isError && stats && (
         <>
+          {/* Veterinarian Verification Attention Banner */}
+          <Card className="border-primary-200 bg-primary-50/60 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-primary-100 p-2.5 text-primary-700">
+                  <ShieldCheck className="size-5" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-ink-900">
+                    Veterinarian Credential Verification Portal
+                  </h2>
+                  <p className="text-xs text-ink-600">
+                    Review and verify state veterinary council registrations and certificates for clinical access.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/admin/veterinarians"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-primary-700 transition-colors self-start sm:self-auto"
+              >
+                Open Verification Queue
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </div>
+          </Card>
+
           {/* KPI Row */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Card className="p-5">

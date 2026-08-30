@@ -12,7 +12,7 @@ const farmer: AuthResponse = {
   expiresIn: 1,
   refreshExpiresIn: 1,
   userId: 1,
-  fullName: "F",
+  fullName: "Farmer Ramesh",
   email: "f@a.in",
   phone: "1",
   role: "FARMER",
@@ -28,6 +28,8 @@ function renderAt(path: string, element: React.ReactNode) {
       <Routes>
         <Route path={path} element={element} />
         <Route path="/login" element={<div>Login Page</div>} />
+        <Route path="/app/dashboard" element={<div>Farmer Home Dashboard</div>} />
+        <Route path="/seller/dashboard" element={<div>Seller Home Dashboard</div>} />
         <Route path="/unauthorized" element={<div>No Access</div>} />
       </Routes>
     </MemoryRouter>,
@@ -72,15 +74,16 @@ describe("RequireAuth", () => {
 });
 
 describe("RequireRole", () => {
-  it("blocks a farmer from an admin route without logging them out", () => {
+  it("blocks a farmer from an admin route and gracefully redirects to farmer dashboard without logging out", () => {
     useAuthStore.getState().setSession(farmer);
     renderAt(
       "/admin",
       <RequireRole roles={["ADMIN"]}>
-        <div>Admin</div>
+        <div>Admin Protected Content</div>
       </RequireRole>,
     );
-    expect(screen.getByText("No Access")).toBeInTheDocument();
+    expect(screen.queryByText("Admin Protected Content")).toBeNull();
+    expect(screen.getByText("Farmer Home Dashboard")).toBeInTheDocument();
     expect(useAuthStore.getState().user).not.toBeNull(); // still signed in
   });
 

@@ -103,4 +103,31 @@ export const adminApi = {
 
   order: (id: number) =>
     api.get<OrderAdminResponse>(`/api/admin/orders/${id}`).then((r) => r.data),
+
+  /* ── Veterinarian Verification ─────────────────────────── */
+  veterinarians: (status?: string, search?: string, page = 0, size = 50) =>
+    api
+      .get<Page<import("../types").AdminVetListItem>>("/api/admin/veterinarians", {
+        params: {
+          status: status || undefined,
+          search: search || undefined,
+          page,
+          size,
+        },
+      })
+      .then((r) => r.data),
+
+  veterinarian: (id: number) =>
+    api.get<import("../types").AdminVetListItem>(`/api/admin/veterinarians/${id}`).then((r) => r.data),
+
+  verifyVeterinarian: (id: number, data?: import("../types").VerifyVetRequest) =>
+    api
+      .post<import("../types").AdminVetListItem>(`/api/admin/veterinarians/${id}/verify`, data || {})
+      .then((r) => r.data),
+
+  rejectVeterinarian: (id: number, data: import("../types").RejectVetRequest) =>
+    api
+      .post<import("../types").AdminVetListItem>(`/api/admin/veterinarians/${id}/reject`, data)
+      .then((r) => r.data),
 };
+

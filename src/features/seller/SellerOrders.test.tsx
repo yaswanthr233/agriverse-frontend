@@ -36,6 +36,27 @@ vi.mock("@/api/endpoints/orders", () => ({
         createdAt: "2026-08-29T10:00:00.000Z",
         updatedAt: "2026-08-29T10:00:00.000Z",
       },
+      {
+        id: 7,
+        status: "CONFIRMED",
+        totalAmount: 1800,
+        deliveryAddress: "Farmer Suresh Farm, Guntur, AP",
+        paymentRef: "PAID",
+        buyerName: "Suresh Gowda",
+        buyerEmail: "suresh@agriverse.in",
+        items: [
+          {
+            productId: 2,
+            productName: "Bio-Fertilizer",
+            productImageUrl: null,
+            quantity: 3,
+            unitPrice: 600,
+            subtotal: 1800,
+          },
+        ],
+        createdAt: "2026-08-29T10:00:00.000Z",
+        updatedAt: "2026-08-29T10:05:00.000Z",
+      },
     ]),
     updateStatus: vi.fn().mockResolvedValue({
       id: 6,
@@ -57,7 +78,7 @@ describe("SellerOrders Component", () => {
     vi.clearAllMocks();
   });
 
-  it("renders pending order and executes 'Mark as Confirmed' mutation", async () => {
+  it("renders pending order and executes 'Confirm Order' mutation", async () => {
     render(
       <QueryClientProvider client={createTestQueryClient()}>
         <BrowserRouter>
@@ -67,9 +88,9 @@ describe("SellerOrders Component", () => {
     );
 
     expect(await screen.findByText("Order #6")).toBeInTheDocument();
-    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
+    expect(screen.getByText("Order #7")).toBeInTheDocument();
 
-    const confirmButton = screen.getByRole("button", { name: /mark as confirmed/i });
+    const confirmButton = screen.getByRole("button", { name: /confirm order/i });
     expect(confirmButton).toBeInTheDocument();
 
     fireEvent.click(confirmButton);
@@ -79,14 +100,18 @@ describe("SellerOrders Component", () => {
     });
   });
 
-  it("defines seller order structure and filters correctly", () => {
-    const mockOrder = {
-      id: 101,
-      status: "CONFIRMED",
-      totalAmount: 1500,
-      items: [{ productId: 1, productName: "Organic Fertilizer", quantity: 2, unitPrice: 750, subtotal: 1500 }],
-    };
-    expect(mockOrder.status).toBe("CONFIRMED");
-    expect(mockOrder.totalAmount).toBe(1500);
+  it("does not offer shipping or delivery actions to the Seller on confirmed orders", async () => {
+    render(
+      <QueryClientProvider client={createTestQueryClient()}>
+        <BrowserRouter>
+          <SellerOrders />
+        </BrowserRouter>
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByText("Order #7")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /mark as shipped/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /mark as dispatched/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /deliver/i })).not.toBeInTheDocument();
   });
 });

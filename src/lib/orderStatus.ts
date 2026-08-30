@@ -5,6 +5,8 @@ const TONES: Record<OrderStatus, Tone> = {
   PENDING: "warning",
   CONFIRMED: "info",
   PACKED: "info",
+  CLAIMED: "info",
+  DISPATCHED: "primary",
   SHIPPED: "primary",
   OUT_FOR_DELIVERY: "primary",
   DELIVERED: "success",
@@ -17,6 +19,8 @@ const LABELS: Record<OrderStatus, string> = {
   PENDING: "Pending",
   CONFIRMED: "Confirmed",
   PACKED: "Packed",
+  CLAIMED: "Claimed / Accepted",
+  DISPATCHED: "Dispatched",
   SHIPPED: "Shipped",
   OUT_FOR_DELIVERY: "Out for Delivery",
   DELIVERED: "Delivered",
@@ -29,7 +33,8 @@ const LABELS: Record<OrderStatus, string> = {
 export const ORDER_TIMELINE: OrderStatus[] = [
   "PENDING",
   "CONFIRMED",
-  "PACKED",
+  "CLAIMED",
+  "DISPATCHED",
   "SHIPPED",
   "OUT_FOR_DELIVERY",
   "DELIVERED",
@@ -41,8 +46,8 @@ export const TERMINAL_STATUSES: OrderStatus[] = [
   "REFUNDED",
 ];
 
-/** A buyer may only cancel before the order is packed. */
+/** A buyer may only cancel before the order is claimed/dispatched. */
 export const CANCELLABLE_STATUSES: OrderStatus[] = ["PENDING", "CONFIRMED"];
 
-export const orderStatusTone = (s: OrderStatus): Tone => TONES[s];
-export const orderStatusLabel = (s: OrderStatus): string => LABELS[s];
+export const orderStatusTone = (s: OrderStatus): Tone => TONES[s] || "neutral";
+export const orderStatusLabel = (s: OrderStatus): string => LABELS[s] || s;

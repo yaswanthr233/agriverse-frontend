@@ -41,10 +41,12 @@ import { AdminProducts } from "@/features/admin/AdminProducts";
 import { AdminOrders } from "@/features/admin/AdminOrders";
 import { AdminOrderDetail } from "@/features/admin/AdminOrderDetail";
 import { AdminSchemes } from "@/features/admin/AdminSchemes";
+import { AdminVetVerification } from "@/features/admin/AdminVetVerification";
 import { VetAppointments } from "@/features/vet/VetAppointments";
 import { VetDashboard } from "@/features/vet/VetDashboard";
 import { VetPatients } from "@/features/vet/VetPatients";
 import { VetEarnings } from "@/features/vet/VetEarnings";
+import { VetVerificationStatus } from "@/features/vet/VetVerificationStatus";
 import { DeliveryDashboard } from "@/features/delivery/DeliveryDashboard";
 import { DeliveryAvailable } from "@/features/delivery/DeliveryAvailable";
 import { DeliveryActive } from "@/features/delivery/DeliveryActive";
@@ -154,6 +156,7 @@ export function AppRoutes() {
           <Route path="/admin" element={<RoleBranch roles={["ADMIN"]} />}>
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="veterinarians" element={<AdminVetVerification />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="users/:id" element={<AdminUserDetail />} />
             <Route path="sellers" element={<AdminSellers />} />
@@ -168,6 +171,8 @@ export function AppRoutes() {
           <Route path="/vet" element={<RoleBranch roles={["VETERINARIAN"]} />}>
             <Route index element={<Navigate to="/vet/dashboard" replace />} />
             <Route path="dashboard" element={<VetDashboard />} />
+            <Route path="verification-status" element={<VetVerificationStatus />} />
+            <Route path="status" element={<VetVerificationStatus />} />
             <Route path="appointments" element={<VetAppointments />} />
             <Route path="patients" element={<VetPatients />} />
             <Route path="earnings" element={<VetEarnings />} />

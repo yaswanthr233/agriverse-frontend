@@ -1,5 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/authStore";
+import { homeRouteFor } from "@/lib/roleRoutes";
 import {
   ArrowRight,
   ShieldCheck,
@@ -22,6 +24,13 @@ import { Card } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 export function Landing() {
+  const user = useAuthStore((s) => s.user);
+  const status = useAuthStore((s) => s.status);
+
+  if (status === "authenticated" && user?.role) {
+    return <Navigate to={homeRouteFor(user.role)} replace />;
+  }
+
   const productsQuery = useQuery({
     queryKey: qk.products({ size: 8 }),
     queryFn: () => productsApi.catalog({ size: 8 }),

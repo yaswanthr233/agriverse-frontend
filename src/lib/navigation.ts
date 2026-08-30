@@ -19,6 +19,8 @@ import {
   Truck,
   History,
   Wallet,
+  ShieldCheck,
+  Award,
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/api/types";
@@ -55,6 +57,7 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
   ],
   ADMIN: [
     { label: "Dashboard", to: "/admin/dashboard", icon: LayoutDashboard },
+    { label: "Vet Verification", to: "/admin/veterinarians", icon: ShieldCheck },
     { label: "Users", to: "/admin/users", icon: Users },
     { label: "Sellers", to: "/admin/sellers", icon: Store },
     { label: "Products", to: "/admin/products", icon: Package },
@@ -67,6 +70,7 @@ export const NAV_ITEMS: Record<Role, NavItem[]> = {
     { label: "Appointments", to: "/vet/appointments", icon: ClipboardList },
     { label: "Patients", to: "/vet/patients", icon: Beef },
     { label: "Earnings", to: "/vet/earnings", icon: Wallet },
+    { label: "Verification Status", to: "/vet/verification-status", icon: Award },
   ],
   DELIVERY_PARTNER: [
     { label: "Dashboard", to: "/delivery/dashboard", icon: LayoutDashboard },

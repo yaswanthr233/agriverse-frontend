@@ -1,7 +1,6 @@
 import { api } from "../client";
 import type {
   AuthResponse,
-  CheckEmailResponse,
   LoginRequest,
   OtpResponse,
   RegisterRequest,
@@ -12,8 +11,8 @@ import type {
 } from "../types";
 
 export const authApi = {
-  checkEmail: (email: string) =>
-    api.post<CheckEmailResponse>("/auth/check-email", { email }).then((r) => r.data),
+  lookupRole: (email: string) =>
+    api.post<{ role: string; roleName: string } | null>("/auth/lookup-role", { email }).then((r) => r.data),
 
   login: (body: LoginRequest) =>
     api.post<AuthResponse>("/auth/login", body).then((r) => r.data),

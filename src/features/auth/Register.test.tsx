@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Register } from "./Register";
 import { authApi } from "@/api/endpoints/auth";
 import * as supabaseLib from "@/lib/supabase";
+import * as locationLib from "@/lib/location";
 import { useAuthStore } from "@/stores/authStore";
 
 const mockNavigate = vi.fn();
@@ -17,7 +18,7 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("@/api/endpoints/auth", () => ({
   authApi: {
-    checkEmail: vi.fn(),
+    lookupRole: vi.fn(),
     register: vi.fn(),
   },
 }));
@@ -27,13 +28,21 @@ vi.mock("@/lib/supabase", () => ({
   verifyEmailOtp: vi.fn(),
 }));
 
-describe("Register Component with in-form Email OTP", () => {
+vi.mock("@/lib/location", async () => {
+  const actual = await vi.importActual("@/lib/location");
+  return {
+    ...actual,
+    getCurrentGpsLocation: vi.fn(),
+  };
+});
+
+describe("Register Component with 4 Required Address Fields & Geolocation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useAuthStore.getState().clearSession();
   });
 
-  it("validates form fields before sending verification OTP", async () => {
+  it("validates that all 4 address fields are strictly mandatory before submission", async () => {
     render(
       <BrowserRouter>
         <Register />
@@ -43,15 +52,39 @@ describe("Register Component with in-form Email OTP", () => {
     const sendBtn = screen.getByRole("button", { name: /send verification code/i });
     fireEvent.click(sendBtn);
 
-    expect(await screen.findByText(/must be at least 2 characters/i)).toBeInTheDocument();
-    expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/house \/ street no is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/pincode is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/state is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/district is required/i)).toBeInTheDocument();
     expect(supabaseLib.sendEmailOtp).not.toHaveBeenCalled();
   });
 
-  it("detects already registered email and shows login message", async () => {
-    vi.mocked(authApi.checkEmail).mockResolvedValueOnce({
-      exists: true,
-      message: "This email is already registered. Please log in.",
+  it("rejects invalid 6-digit Indian pincode formats (letters, wrong lengths)", async () => {
+    render(
+      <BrowserRouter>
+        <Register />
+      </BrowserRouter>
+    );
+
+    fireEvent.change(screen.getByLabelText(/pincode/i), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: /send verification code/i }));
+
+    expect(await screen.findByText(/enter a valid 6-digit pincode/i)).toBeInTheDocument();
+  });
+
+  it("populates address fields automatically when Use Current Location succeeds", async () => {
+    vi.mocked(locationLib.getCurrentGpsLocation).mockResolvedValueOnce({
+      latitude: 16.5062,
+      longitude: 80.648,
+      accuracy: 10,
+      address: "12-45, MG Road, Vijayawada, NTR, Andhra Pradesh, 520001",
+      components: {
+        houseStreetNo: "12-45, MG Road",
+        pincode: "520001",
+        state: "Andhra Pradesh",
+        district: "NTR",
+        city: "Vijayawada",
+      },
     });
 
     render(
@@ -60,53 +93,40 @@ describe("Register Component with in-form Email OTP", () => {
       </BrowserRouter>
     );
 
-    fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: "Ramesh Patel" } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "ramesh@example.com" } });
-    fireEvent.change(screen.getByLabelText(/phone/i), { target: { value: "9876543210" } });
-    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: "Password123" } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "Password123" } });
-
-    const sendBtn = screen.getByRole("button", { name: /send verification code/i });
-    fireEvent.click(sendBtn);
-
-    expect(await screen.findByText(/this email is already registered/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /click here to sign in/i })).toBeInTheDocument();
-    expect(supabaseLib.sendEmailOtp).not.toHaveBeenCalled();
-  });
-
-  it("requests Supabase OTP and dynamically reveals OTP section on success", async () => {
-    vi.mocked(authApi.checkEmail).mockResolvedValueOnce({ exists: false });
-    vi.mocked(supabaseLib.sendEmailOtp).mockResolvedValueOnce({
-      success: true,
-      message: "Verification code sent to your email.",
-    });
-
-    render(
-      <BrowserRouter>
-        <Register />
-      </BrowserRouter>
-    );
-
-    fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: "Ramesh Patel" } });
-    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "ramesh@example.com" } });
-    fireEvent.change(screen.getByLabelText(/phone/i), { target: { value: "9876543210" } });
-    fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: "Password123" } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "Password123" } });
-
-    const sendBtn = screen.getByRole("button", { name: /send verification code/i });
-    fireEvent.click(sendBtn);
+    const locBtn = screen.getByRole("button", { name: /use current location/i });
+    fireEvent.click(locBtn);
 
     await waitFor(() => {
-      expect(supabaseLib.sendEmailOtp).toHaveBeenCalledWith("ramesh@example.com");
+      expect(screen.getByLabelText(/house \/ street no/i)).toHaveValue("12-45, MG Road");
+      expect(screen.getByLabelText(/pincode/i)).toHaveValue("520001");
+      expect(screen.getByLabelText(/state/i)).toHaveValue("Andhra Pradesh");
+      expect(screen.getByLabelText(/district/i)).toHaveValue("NTR");
     });
 
-    expect(await screen.findByText(/verification code sent to your email/i)).toBeInTheDocument();
-    expect(screen.getByText(/verify email & create account/i)).toBeInTheDocument();
-    expect(screen.getAllByLabelText(/verification code digit/i).length).toBe(6);
+    expect(await screen.findByText(/current location detected/i)).toBeInTheDocument();
   });
 
-  it("verifies OTP and logs in user, redirecting to farmer dashboard", async () => {
-    vi.mocked(authApi.checkEmail).mockResolvedValueOnce({ exists: false });
+  it("shows veterinarian-specific credential fields when role is Veterinary Doctor", async () => {
+    render(
+      <BrowserRouter>
+        <Register />
+      </BrowserRouter>
+    );
+
+    expect(screen.queryByLabelText(/veterinary registration number/i)).not.toBeInTheDocument();
+
+    // Select Veterinary Doctor
+    fireEvent.change(screen.getByLabelText(/i am a/i), { target: { value: "VETERINARIAN" } });
+
+    expect(await screen.findByLabelText(/veterinary registration number/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/issuing veterinary council \/ authority/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/qualification/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/college \/ university/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/graduation year/i)).toBeInTheDocument();
+  });
+
+  it("completes full registration with 4 required address fields and redirects to role dashboard", async () => {
+    vi.mocked(authApi.lookupRole).mockResolvedValueOnce(null);
     vi.mocked(supabaseLib.sendEmailOtp).mockResolvedValueOnce({ success: true });
     vi.mocked(supabaseLib.verifyEmailOtp).mockResolvedValueOnce({
       success: true,
@@ -123,8 +143,11 @@ describe("Register Component with in-form Email OTP", () => {
       email: "ramesh@example.com",
       phone: "9876543210",
       role: "FARMER",
+      houseStreetNo: "12-45, Farm Road",
+      pincode: "520001",
+      state: "Andhra Pradesh",
+      district: "NTR",
       city: null,
-      state: null,
       isVerified: true,
       avatarUrl: null,
     });
@@ -139,6 +162,10 @@ describe("Register Component with in-form Email OTP", () => {
     fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: "Ramesh Patel" } });
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "ramesh@example.com" } });
     fireEvent.change(screen.getByLabelText(/phone/i), { target: { value: "9876543210" } });
+    fireEvent.change(screen.getByLabelText(/house \/ street no/i), { target: { value: "12-45, Farm Road" } });
+    fireEvent.change(screen.getByLabelText(/pincode/i), { target: { value: "520001" } });
+    fireEvent.change(screen.getByLabelText(/state/i), { target: { value: "Andhra Pradesh" } });
+    fireEvent.change(screen.getByLabelText(/district/i), { target: { value: "NTR" } });
     fireEvent.change(screen.getByLabelText(/^password/i), { target: { value: "Password123" } });
     fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: "Password123" } });
 
@@ -160,18 +187,21 @@ describe("Register Component with in-form Email OTP", () => {
 
     await waitFor(() => {
       expect(supabaseLib.verifyEmailOtp).toHaveBeenCalledWith("ramesh@example.com", "123456");
-      expect(authApi.register).toHaveBeenCalledWith({
-        fullName: "Ramesh Patel",
-        email: "ramesh@example.com",
-        phone: "9876543210",
-        password: "Password123",
-        role: "FARMER",
-        city: "",
-        state: "",
-        supabaseUserId: "sb-user-123",
-      });
+      expect(authApi.register).toHaveBeenCalledWith(
+        expect.objectContaining({
+          fullName: "Ramesh Patel",
+          email: "ramesh@example.com",
+          phone: "9876543210",
+          password: "Password123",
+          role: "FARMER",
+          houseStreetNo: "12-45, Farm Road",
+          pincode: "520001",
+          state: "Andhra Pradesh",
+          district: "NTR",
+          supabaseUserId: "sb-user-123",
+        })
+      );
       expect(mockNavigate).toHaveBeenCalledWith("/app/dashboard", { replace: true });
     });
   });
 });
-

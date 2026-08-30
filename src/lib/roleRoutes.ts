@@ -1,4 +1,4 @@
-import type { Role } from "@/api/types";
+import type { Role, VetVerificationStatus } from "@/api/types";
 
 const HOME: Record<Role, string> = {
   FARMER: "/app/dashboard",
@@ -8,6 +8,17 @@ const HOME: Record<Role, string> = {
   DELIVERY_PARTNER: "/delivery/dashboard",
 };
 
-export function homeRouteFor(role: Role | undefined | null): string {
-  return role ? HOME[role] : "/";
+export function homeRouteFor(
+  role: Role | undefined | null,
+  verificationStatus?: VetVerificationStatus | string | null
+): string {
+  if (!role) return "/";
+
+  if (role === "VETERINARIAN") {
+    if (verificationStatus && verificationStatus !== "VERIFIED") {
+      return "/vet/verification-status";
+    }
+  }
+
+  return HOME[role] || "/";
 }

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { History, MapPin } from "lucide-react";
+import { History, MapPin, Package } from "lucide-react";
 import { deliveryApi } from "@/api/endpoints/deliveryPortal";
 import { qk } from "@/api/queryKeys";
 import type { OrderResponse } from "@/api/types";
@@ -37,8 +37,7 @@ export function DeliveryHistory() {
           Delivery History
         </h1>
         <p className="mt-1 text-sm text-ink-500">
-          Archived ledger of all completed deliveries fulfilled by your partner
-          account.
+          Archived ledger of all completed deliveries fulfilled by your partner account.
         </p>
       </div>
 
@@ -56,7 +55,7 @@ export function DeliveryHistory() {
         <EmptyState
           icon={History}
           title="No completed deliveries yet"
-          description="Packages you claim and mark as delivered will automatically appear in this history."
+          description="Packages you accept, dispatch, and mark as delivered will automatically appear in this history."
         />
       )}
 
@@ -78,8 +77,23 @@ export function DeliveryHistory() {
               ),
             },
             {
+              key: "products",
+              header: "Delivered Products",
+              render: (o) => (
+                <div className="max-w-xs text-xs text-ink-800">
+                  {o.items && o.items.length > 0 ? (
+                    <span className="line-clamp-2">
+                      {o.items.map((i) => `${i.productName} × ${i.quantity}`).join(", ")}
+                    </span>
+                  ) : (
+                    <span className="text-ink-400 italic">Standard consignment</span>
+                  )}
+                </div>
+              ),
+            },
+            {
               key: "buyer",
-              header: "Recipient",
+              header: "Recipient Farmer",
               render: (o) => (
                 <span className="text-xs font-medium text-ink-900">
                   {o.buyerName}
@@ -97,7 +111,7 @@ export function DeliveryHistory() {
             },
             {
               key: "total",
-              header: "Order Value",
+              header: "Consignment Value",
               numeric: true,
               render: (o) => (
                 <span className="numeric font-semibold text-ink-900">
@@ -131,7 +145,13 @@ export function DeliveryHistory() {
                   {formatCurrency(o.totalAmount)}
                 </span>
               </div>
-              <p className="font-medium text-ink-700">To: {o.buyerName}</p>
+              <p className="font-medium text-ink-700">Farmer: {o.buyerName}</p>
+              {o.items && o.items.length > 0 && (
+                <p className="flex items-center gap-1 text-ink-600">
+                  <Package className="size-3 text-primary-600" />
+                  {o.items.map((i) => `${i.productName} × ${i.quantity}`).join(", ")}
+                </p>
+              )}
               <p className="flex items-start gap-1 text-ink-500">
                 <MapPin
                   className="mt-0.5 size-3 shrink-0"

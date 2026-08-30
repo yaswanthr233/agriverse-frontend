@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -76,6 +76,12 @@ export function VetAppointments() {
     queryFn: vetPortalApi.schedule,
   });
 
+  useEffect(() => {
+    if (isError && error) {
+      console.error("Failed to load veterinarian appointments", error);
+    }
+  }, [isError, error]);
+
   const updateMutation = useMutation({
     mutationFn: ({
       id,
@@ -128,7 +134,9 @@ export function VetAppointments() {
             Review incoming consultation requests, verify farmer visit locations, and prescribe treatments.
           </p>
         </div>
-        <Badge tone="neutral">{apptList.length} Total Visits</Badge>
+        {!isLoading && !isError && (
+          <Badge tone="neutral">{apptList.length} Total Visits</Badge>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -157,7 +165,17 @@ export function VetAppointments() {
         </div>
       )}
 
-      {isError && <ErrorState error={error} onRetry={() => void refetch()} />}
+      {isError && (
+        <ErrorState
+          error={error}
+          title="Unable to load appointments"
+          description="Failed to load your veterinary consultation schedule. Please try again."
+          onRetry={() => {
+            console.error("Retrying appointments fetch...");
+            void refetch();
+          }}
+        />
+      )}
 
       {!isLoading && !isError && sorted.length === 0 && (
         <EmptyState

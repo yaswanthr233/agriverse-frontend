@@ -25,12 +25,20 @@ vi.mock("@/api/client", () => {
             data: [
               {
                 id: 101,
-                status: "SHIPPED",
-                totalAmount: "3000.00",
-                deliveryAddress: "Farmer Green Acres, Mandya, Karnataka",
+                status: "CONFIRMED",
+                totalAmount: 3500,
+                deliveryAddress: "12-45, Farm Road, Mandya, Karnataka, 571401",
+                deliveryLatitude: 12.5234,
+                deliveryLongitude: 76.8976,
+                deliveryAccuracy: 12,
                 buyerName: "Ramesh Patel",
                 buyerPhone: "9876543210",
-                itemCount: 2,
+                itemCount: 3,
+                items: [
+                  { productId: 1, productName: "Guntur Chilli Seeds", quantity: 5, unitPrice: 200, subtotal: 1000 },
+                  { productId: 2, productName: "Hybrid Tomato Seeds", quantity: 10, unitPrice: 150, subtotal: 1500 },
+                  { productId: 3, productName: "Organic Bio-Fertilizer", quantity: 2, unitPrice: 500, subtotal: 1000 },
+                ],
                 createdAt: "2026-08-29T10:00:00.000Z",
               },
             ],
@@ -63,19 +71,36 @@ vi.mock("@/api/client", () => {
             data: [
               {
                 id: 101,
-                status: "OUT_FOR_DELIVERY",
-                totalAmount: 3000,
-                deliveryAddress: "Farmer Green Acres, Mandya, Karnataka",
+                status: "CLAIMED",
+                totalAmount: 3500,
+                deliveryAddress: "12-45, Farm Road, Mandya, Karnataka, 571401",
+                deliveryLatitude: 12.5234,
+                deliveryLongitude: 76.8976,
+                deliveryAccuracy: 12,
                 buyerName: "Ramesh Patel",
+                buyerPhone: "9876543210",
                 buyerEmail: "ramesh@agriverse.in",
                 items: [
                   {
-                    productId: 5,
+                    productId: 1,
+                    productName: "Guntur Chilli Seeds",
+                    quantity: 5,
+                    unitPrice: 200,
+                    subtotal: 1000,
+                  },
+                  {
+                    productId: 2,
+                    productName: "Hybrid Tomato Seeds",
+                    quantity: 10,
+                    unitPrice: 150,
+                    subtotal: 1500,
+                  },
+                  {
+                    productId: 3,
                     productName: "Organic Bio-Fertilizer",
-                    productImageUrl: null,
                     quantity: 2,
-                    unitPrice: 1500,
-                    subtotal: 3000,
+                    unitPrice: 500,
+                    subtotal: 1000,
                   },
                 ],
                 createdAt: "2026-08-29T10:00:00.000Z",
@@ -86,9 +111,20 @@ vi.mock("@/api/client", () => {
                 status: "DELIVERED",
                 totalAmount: 1800,
                 deliveryAddress: "Cauvery Farm, Mysuru, Karnataka",
+                deliveryLatitude: null,
+                deliveryLongitude: null,
+                deliveryAccuracy: null,
                 buyerName: "Suresh Gowda",
                 buyerEmail: "suresh@agriverse.in",
-                items: [],
+                items: [
+                  {
+                    productId: 4,
+                    productName: "Paddy Seeds",
+                    quantity: 3,
+                    unitPrice: 600,
+                    subtotal: 1800,
+                  },
+                ],
                 createdAt: "2026-08-28T09:00:00.000Z",
                 updatedAt: "2026-08-28T14:00:00.000Z",
               },
@@ -99,6 +135,21 @@ vi.mock("@/api/client", () => {
       }),
       post: vi.fn((url: string) => {
         if (url.includes("/claim")) {
+          return Promise.resolve({
+            data: { id: 101, status: "CLAIMED" },
+          });
+        }
+        if (url.includes("/dispatch")) {
+          return Promise.resolve({
+            data: { id: 101, status: "DISPATCHED" },
+          });
+        }
+        if (url.includes("/ship")) {
+          return Promise.resolve({
+            data: { id: 101, status: "SHIPPED" },
+          });
+        }
+        if (url.includes("/start-delivery")) {
           return Promise.resolve({
             data: { id: 101, status: "OUT_FOR_DELIVERY" },
           });
@@ -121,8 +172,8 @@ vi.mock("@/api/client", () => {
   };
 });
 
-describe("Delivery Partner Frontend Workflows", () => {
-  it("DeliveryAvailable renders orders and allows claiming", async () => {
+describe("Delivery Partner Frontend Workflows with Real Product Items & Progressive Actions", () => {
+  it("DeliveryAvailable renders confirmed orders with real product items and executes Accept Order", async () => {
     render(
       <QueryClientProvider client={createTestQueryClient()}>
         <BrowserRouter>
@@ -131,18 +182,27 @@ describe("Delivery Partner Frontend Workflows", () => {
       </QueryClientProvider>
     );
 
-    expect(await screen.findByText("Farmer Green Acres, Mandya, Karnataka")).toBeInTheDocument();
-    expect(screen.getByText("#101")).toBeInTheDocument();
+    expect(await screen.findByText("12-45, Farm Road, Mandya, Karnataka, 571401")).toBeInTheDocument();
+    expect(screen.getByText("Order #101")).toBeInTheDocument();
+    expect(screen.getByText("Confirmed by Seller")).toBeInTheDocument();
+    expect(screen.getByText(/Guntur Chilli Seeds/i)).toBeInTheDocument();
+    expect(screen.getByText(/5 units/i)).toBeInTheDocument();
+    expect(screen.getByText(/Hybrid Tomato Seeds/i)).toBeInTheDocument();
+    expect(screen.getByText(/10 units/i)).toBeInTheDocument();
+    expect(screen.getByText(/Organic Bio-Fertilizer/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 units/i)).toBeInTheDocument();
+    expect(screen.getByText("GPS Location Verified")).toBeInTheDocument();
+    expect(screen.getByText(/Open in Maps/i)).toBeInTheDocument();
 
-    const claimButton = screen.getByRole("button", { name: /claim order/i });
-    fireEvent.click(claimButton);
+    const acceptButton = screen.getByRole("button", { name: /accept order/i });
+    fireEvent.click(acceptButton);
 
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith("/api/delivery/orders/101/claim");
     });
   });
 
-  it("DeliveryActive renders in-transit consignments and marks as delivered", async () => {
+  it("DeliveryActive renders claimed consignment and executes Mark as Dispatched", async () => {
     render(
       <QueryClientProvider client={createTestQueryClient()}>
         <BrowserRouter>
@@ -152,20 +212,19 @@ describe("Delivery Partner Frontend Workflows", () => {
     );
 
     expect(await screen.findByText("Order #101")).toBeInTheDocument();
-    expect(screen.getByText("Out for Delivery")).toBeInTheDocument();
+    expect(screen.getByText(/Guntur Chilli Seeds/i)).toBeInTheDocument();
+    expect(screen.getByText(/5 units/i)).toBeInTheDocument();
+    expect(screen.getByText("GPS Verified Destination")).toBeInTheDocument();
 
-    const markDeliveredButton = screen.getByRole("button", { name: /mark as delivered/i });
-    fireEvent.click(markDeliveredButton);
-
-    const confirmButton = await screen.findByRole("button", { name: /confirm delivered/i });
-    fireEvent.click(confirmButton);
+    const dispatchButton = screen.getByRole("button", { name: /mark as dispatched/i });
+    fireEvent.click(dispatchButton);
 
     await waitFor(() => {
-      expect(api.post).toHaveBeenCalledWith("/api/delivery/orders/101/deliver");
+      expect(api.post).toHaveBeenCalledWith("/api/delivery/orders/101/dispatch");
     });
   });
 
-  it("DeliveryHistory displays completed deliveries", async () => {
+  it("DeliveryHistory displays completed deliveries with delivered products", async () => {
     render(
       <QueryClientProvider client={createTestQueryClient()}>
         <BrowserRouter>
@@ -176,6 +235,7 @@ describe("Delivery Partner Frontend Workflows", () => {
 
     expect(await screen.findByText("#99")).toBeInTheDocument();
     expect(screen.getAllByText("Suresh Gowda").length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Paddy Seeds × 3/i).length).toBeGreaterThan(0);
   });
 
   it("DeliveryEarnings displays KPI metrics and settlements", async () => {
@@ -191,4 +251,3 @@ describe("Delivery Partner Frontend Workflows", () => {
     expect(screen.getByText("Total Deliveries")).toBeInTheDocument();
   });
 });
-

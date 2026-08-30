@@ -6,25 +6,55 @@ import type {
 } from "../types";
 
 export const deliveryApi = {
-  // Requires the Task 1 backend fix. Returns orders in SHIPPED.
+  // Returns confirmed orders waiting for a delivery partner
   available: () =>
     api
       .get<DeliveryOrderBrief[]>("/api/delivery/orders/available")
       .then((r) => r.data),
 
-  // 400 INVALID_STATUS if the order is no longer SHIPPED (someone else claimed it).
+  // 400 INVALID_STATUS if the order is no longer CONFIRMED/available
   claim: (id: number) =>
     api
       .post<DeliveryOrderBrief>(`/api/delivery/orders/${id}/claim`)
       .then((r) => r.data),
 
-  // 400 INVALID_STATUS if the order is not OUT_FOR_DELIVERY.
+  // Mark as Dispatched
+  dispatch: (id: number) =>
+    api
+      .post<DeliveryOrderBrief>(`/api/delivery/orders/${id}/dispatch`)
+      .then((r) => r.data),
+
+  // Mark as Shipped
+  ship: (id: number) =>
+    api
+      .post<DeliveryOrderBrief>(`/api/delivery/orders/${id}/ship`)
+      .then((r) => r.data),
+
+  // Start Delivery / Out for Delivery
+  startDelivery: (id: number) =>
+    api
+      .post<DeliveryOrderBrief>(`/api/delivery/orders/${id}/start-delivery`)
+      .then((r) => r.data),
+
+  // Mark as Delivered
   deliver: (id: number) =>
     api
       .post<DeliveryOrderBrief>(`/api/delivery/orders/${id}/deliver`)
       .then((r) => r.data),
 
-  // These two live on OrderController and already used the correct role.
+  // Active deliveries assigned to delivery partner
+  active: () =>
+    api
+      .get<DeliveryOrderBrief[]>("/api/delivery/orders/active")
+      .then((r) => r.data),
+
+  // Delivery history assigned to delivery partner
+  history: () =>
+    api
+      .get<DeliveryOrderBrief[]>("/api/delivery/orders/history")
+      .then((r) => r.data),
+
+  // Pipeline (all assigned and active delivery orders)
   pipeline: () =>
     api.get<OrderResponse[]>("/api/orders/delivery").then((r) => r.data),
 

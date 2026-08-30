@@ -28,14 +28,39 @@ export interface Page<T> {
 export type Role =
   | "FARMER" | "SELLER" | "ADMIN" | "VETERINARIAN" | "DELIVERY_PARTNER";
 
+export type VetVerificationStatus = "PENDING" | "VERIFIED" | "REJECTED";
+
 export type OrderStatus =
-  | "PENDING" | "CONFIRMED" | "PACKED" | "SHIPPED"
+  | "PENDING" | "CONFIRMED" | "PACKED" | "CLAIMED" | "DISPATCHED" | "SHIPPED"
   | "OUT_FOR_DELIVERY" | "DELIVERED"
   | "CANCELLED" | "RETURNED" | "REFUNDED";
 
 export type ProductCategory =
   | "SEEDS" | "FERTILIZERS" | "PESTICIDES" | "TOOLS_EQUIPMENT"
   | "IRRIGATION" | "ANIMAL_FEED" | "ORGANIC" | "MACHINERY" | "OTHER";
+
+export interface VeterinarianProfileResponse {
+  id: number;
+  userId: number;
+  registrationNumber: string;
+  issuingAuthority: string;
+  state: string;
+  qualification: string;
+  college: string;
+  graduationYear: number;
+  registrationCertificateUrl: string;
+  qualificationCertificateUrl?: string | null;
+  verificationStatus: VetVerificationStatus;
+  verificationReason?: string | null;
+  verificationMethod?: "MANUAL" | "OFFICIAL_REGISTRY";
+  registryName?: string | null;
+  registryReference?: string | null;
+  registryCheckedAt?: string | null;
+  verifiedBy?: { id: number; fullName: string; email: string } | null;
+  verifiedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 /* ── Auth ─────────────────────────────────────────────── */
 export interface AuthResponse {
@@ -49,9 +74,16 @@ export interface AuthResponse {
   email: string;
   phone: string;
   role: Role;
-  city: string | null;
-  state: string | null;
+  houseStreetNo?: string | null;
+  pincode?: string | null;
+  district?: string | null;
+  city?: string | null;
+  state?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   isVerified: boolean;
+  verificationStatus?: VetVerificationStatus;
+  veterinarianProfile?: VeterinarianProfileResponse | null;
   avatarUrl: string | null;
 }
 
@@ -62,9 +94,16 @@ export interface AuthUser {
   email: string;
   phone: string;
   role: Role;
-  city: string | null;
-  state: string | null;
+  houseStreetNo?: string | null;
+  pincode?: string | null;
+  district?: string | null;
+  city?: string | null;
+  state?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   isVerified: boolean;
+  verificationStatus?: VetVerificationStatus;
+  veterinarianProfile?: VeterinarianProfileResponse | null;
   avatarUrl: string | null;
 }
 
@@ -74,9 +113,16 @@ export interface UserProfileResponse {
   email: string;
   phone: string;
   role: Role;
-  city: string | null;
-  state: string | null;
+  houseStreetNo?: string | null;
+  pincode?: string | null;
+  district?: string | null;
+  city?: string | null;
+  state?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   isVerified: boolean;
+  verificationStatus?: VetVerificationStatus;
+  veterinarianProfile?: VeterinarianProfileResponse | null;
   avatarUrl: string | null;
   createdAt: string;
   updatedAt: string;
@@ -85,6 +131,12 @@ export interface UserProfileResponse {
 export interface LoginRequest {
   email: string;
   password: string;
+  role?: Role;
+}
+
+export interface LookupRoleResponse {
+  role: Role;
+  roleName: string;
 }
 
 export interface CheckEmailResponse {
@@ -99,9 +151,23 @@ export interface RegisterRequest {
   phone: string;
   password: string;
   role: Role;
+  houseStreetNo: string;
+  pincode: string;
+  state: string;
+  district: string;
   city?: string;
-  state?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   supabaseUserId?: string;
+
+  // Veterinarian Verification Fields
+  registrationNumber?: string;
+  issuingAuthority?: string;
+  qualification?: string;
+  college?: string;
+  graduationYear?: number;
+  registrationCertificateUrl?: string;
+  qualificationCertificateUrl?: string;
 }
 
 export type RegisterResponse = AuthResponse;
@@ -208,9 +274,13 @@ export interface OrderResponse {
   status: OrderStatus;
   totalAmount: number;
   deliveryAddress: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
+  deliveryAccuracy?: number | null;
   paymentRef: string | null;
   buyerName: string;
   buyerEmail: string;
+  buyerPhone?: string | null;
   items: OrderItemResponse[];
   createdAt: string;
   updatedAt: string;
@@ -218,6 +288,9 @@ export interface OrderResponse {
 
 export interface PlaceOrderRequest {
   deliveryAddress: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
+  deliveryAccuracy?: number | null;
   items: { productId: number; quantity: number }[];
   paymentMethod?: string;
   paymentRef?: string;
@@ -589,15 +662,28 @@ export interface VetEarningsResponse {
   }[];
 }
 
-/** NOTE: totalAmount is a STRING here, unlike OrderResponse.totalAmount (number). */
+export interface DeliveryOrderItem {
+  productId: number;
+  productName: string;
+  productImageUrl?: string | null;
+  quantity: number;
+  unitPrice: number;
+  subtotal?: number;
+}
+
 export interface DeliveryOrderBrief {
   id: number;
   status: string;
-  totalAmount: string;
+  totalAmount: string | number;
   deliveryAddress: string;
+  deliveryLatitude?: number | null;
+  deliveryLongitude?: number | null;
+  deliveryAccuracy?: number | null;
   buyerName: string;
   buyerPhone: string;
+  buyerEmail?: string | null;
   itemCount: number;
+  items: DeliveryOrderItem[];
   createdAt: string;
 }
 
@@ -622,6 +708,53 @@ export interface UploadResponse {
   size: number;
   mimetype: string;
   provider: "supabase" | "local";
+}
+
+/* ── Admin Veterinarian Verification Types ─────────────── */
+export interface AdminVetListItem {
+  id: number;
+  userId: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  role: Role;
+  houseStreetNo?: string | null;
+  pincode?: string | null;
+  district?: string | null;
+  state?: string | null;
+  city?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  isActive: boolean;
+  isVerified: boolean;
+  verificationStatus: VetVerificationStatus;
+  registrationNumber: string;
+  issuingAuthority: string;
+  qualification: string;
+  college: string;
+  graduationYear: number | null;
+  registrationCertificateUrl: string | null;
+  qualificationCertificateUrl?: string | null;
+  verificationReason?: string | null;
+  verificationMethod?: "MANUAL" | "OFFICIAL_REGISTRY";
+  registryName?: string | null;
+  registryReference?: string | null;
+  registryCheckedAt?: string | null;
+  verifiedBy?: { id: number; fullName: string; email: string } | null;
+  verifiedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VerifyVetRequest {
+  verificationMethod?: "MANUAL" | "OFFICIAL_REGISTRY";
+  registryName?: string;
+  registryReference?: string;
+  notes?: string;
+}
+
+export interface RejectVetRequest {
+  reason: string;
 }
 
 

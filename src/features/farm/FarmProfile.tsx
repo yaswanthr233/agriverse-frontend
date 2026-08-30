@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ImageUploader } from "@/components/ui/ImageUploader";
+import { ErrorState } from "@/components/feedback/ErrorState";
 
 const schema = z.object({
   farmName: z.string().min(1, "Farm name is required"),
@@ -30,11 +31,19 @@ const schema = z.object({
 type FormInput = z.input<typeof schema>;
 type FormOutput = z.output<typeof schema>;
 
+import { useAuthStore } from "@/stores/authStore";
+
 export function FarmProfile() {
   const queryClient = useQueryClient();
+  const user = useAuthStore((s) => s.user);
 
-  // retry: false — a missing farm is expected for a new account, not a transient failure.
-  const { data: farm, isLoading } = useQuery({
+  const {
+    data: farm,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: qk.myFarm(),
     queryFn: farmApi.mine,
     retry: false,
@@ -61,13 +70,33 @@ export function FarmProfile() {
   });
 
   useEffect(() => {
-    if (farm) reset(farm);
+    if (isError && error) {
+      console.error("MY FARM QUERY ERROR", error);
+      console.error("MY FARM USER", user);
+      console.error("MY FARM DATA", farm);
+    }
+  }, [isError, error, user, farm]);
+
+  useEffect(() => {
+    if (farm) {
+      reset({
+        farmName: farm.farmName || "",
+        village: farm.village || "",
+        district: farm.district || "",
+        state: farm.state || "",
+        totalAreaAcres: farm.totalAreaAcres ?? undefined,
+        primaryActivity: farm.primaryActivity || "",
+        soilType: farm.soilType || "",
+        hasIrrigation: Boolean(farm.hasIrrigation),
+        imageUrl: farm.imageUrl || "",
+      });
+    }
   }, [farm, reset]);
 
   const save = useMutation({
     mutationFn: farmApi.save,
     onSuccess: () => {
-      toast.success("Farm profile saved");
+      toast.success("Farm profile saved successfully");
       void queryClient.invalidateQueries({ queryKey: qk.myFarm() });
       void queryClient.invalidateQueries({ queryKey: qk.farmerAnalytics() });
     },
@@ -79,6 +108,16 @@ export function FarmProfile() {
 
   if (isLoading) return <Skeleton className="h-96 w-full" />;
 
+  if (isError && error instanceof ApiError && error.status !== 404) {
+    return (
+      <ErrorState
+        error={error}
+        title="Couldn't load farm profile."
+        onRetry={() => void refetch()}
+      />
+    );
+  }
+
   return (
     <div className="max-w-2xl">
       <h1 className="text-2xl font-semibold text-ink-900">
@@ -86,8 +125,8 @@ export function FarmProfile() {
       </h1>
       <p className="mt-1 text-ink-500">
         {farm
-          ? "Keep your details up to date."
-          : "This unlocks crops, expenses and analytics."}
+          ? "Keep your farm details and specifications up to date."
+          : "Set up your farm profile to unlock crops, expenses, and analytics."}
       </p>
 
       <Card className="mt-6 p-6">

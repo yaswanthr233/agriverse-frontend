@@ -7,6 +7,7 @@ import { authApi } from "@/api/endpoints/auth";
 import { ApiError } from "@/api/client";
 import { useAuthStore } from "@/stores/authStore";
 import { homeRouteFor } from "@/lib/roleRoutes";
+import type { Role } from "@/api/types";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
@@ -16,10 +17,19 @@ const schema = z.object({
 });
 type FormValues = z.infer<typeof schema>;
 
+const ROLE_OPTIONS: { value: Role; label: string }[] = [
+  { value: "FARMER", label: "🌾 Farmer" },
+  { value: "SELLER", label: "🏪 Seller" },
+  { value: "VETERINARIAN", label: "🩺 Veterinary Doctor" },
+  { value: "DELIVERY_PARTNER", label: "🚚 Delivery Partner" },
+  { value: "ADMIN", label: "🛡️ Admin" },
+];
+
 export function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const setSession = useAuthStore((s) => s.setSession);
+  const [selectedRole, setSelectedRole] = useState<Role>("FARMER");
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -31,31 +41,39 @@ export function Login() {
   async function onSubmit(values: FormValues) {
     setFormError(null);
     try {
-      const auth = await authApi.login(values);
+      const auth = await authApi.login({
+        email: values.email,
+        password: values.password,
+        role: selectedRole,
+      });
       setSession(auth);
       const from = (location.state as { from?: { pathname: string } } | null)
         ?.from?.pathname;
       navigate(from ?? homeRouteFor(auth.role), { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.errorCode === "EMAIL_VERIFICATION_REQUIRED") {
-        // Redirect unverified users directly to OTP verification
         navigate("/verify-email", {
           state: {
             email: values.email,
-            message: "Email verification is required before signing in. A fresh code has been sent to your email.",
+            message:
+              "Email verification is required before signing in. A fresh code has been sent to your email.",
           },
           replace: true,
         });
         return;
       }
 
-      // Never reveal WHICH field was wrong.
+      if (err instanceof ApiError && err.status === 403) {
+        setFormError(err.message);
+        return;
+      }
+
       setFormError(
         err instanceof ApiError && err.status === 401
           ? "Incorrect email or password."
           : err instanceof ApiError
             ? err.message
-            : "Something went wrong. Please try again.",
+            : "Something went wrong. Please try again."
       );
     }
   }
@@ -72,6 +90,29 @@ export function Login() {
         className="mt-6 space-y-4"
         noValidate
       >
+        <div>
+          <label
+            htmlFor="login-role"
+            className="block text-sm font-medium text-ink-700"
+          >
+            Login as
+          </label>
+          <div className="mt-1">
+            <select
+              id="login-role"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value as Role)}
+              className="w-full rounded-lg border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+            >
+              {ROLE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         <Input
           label="Email"
           type="email"
@@ -92,7 +133,7 @@ export function Login() {
         {formError && (
           <p
             role="alert"
-            className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-700"
+            className="rounded-md bg-danger-50 px-3 py-2 text-sm text-danger-700 font-medium"
           >
             {formError}
           </p>
